@@ -6,265 +6,68 @@
 <title>杭州相亲帮帮 · 群组匹配</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
-  :root {
-    --primary: #ec4899;
-    --primary-light: #fce7f3;
-    --primary-dark: #be185d;
-  }
+  :root { --primary:#ec4899; --primary-light:#fce7f3; --primary-dark:#be185d; }
   * { -webkit-tap-highlight-color: transparent; }
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Helvetica Neue", sans-serif;
-    background: linear-gradient(180deg, #fdf2f8 0%, #ffffff 100%);
-    min-height: 100vh;
-    padding-bottom: 80px;
-  }
-  .score-ring {
-    background: conic-gradient(var(--primary) var(--p, 0%), #fce7f3 var(--p, 0%));
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .score-ring-inner {
-    background: white;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-  }
-  .tab-active { color: var(--primary); border-bottom: 2px solid var(--primary); }
-  .tab-inactive { color: #6b7280; }
-  .photo-slot {
-    aspect-ratio: 3/4;
-    background: #fce7f3;
-    border: 2px dashed #f9a8d4;
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #ec4899;
-    font-size: 24px;
-    cursor: pointer;
-    overflow: hidden;
-    position: relative;
-  }
-  .photo-slot img { width: 100%; height: 100%; object-fit: cover; }
-  .photo-slot .remove {
-    position: absolute;
-    top: 4px; right: 4px;
-    background: rgba(0,0,0,0.5);
-    color: white;
-    border-radius: 50%;
-    width: 24px; height: 24px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 14px;
-  }
-  .quiz-option {
-    border: 2px solid #f3f4f6;
-    border-radius: 12px;
-    padding: 12px 16px;
-    cursor: pointer;
-    transition: all 0.2s;
-    background: white;
-  }
-  .quiz-option:hover { border-color: #f9a8d4; }
-  .quiz-option.selected {
-    border-color: var(--primary);
-    background: var(--primary-light);
-  }
-  .rec-card {
-    background: white;
-    border-radius: 16px;
-    box-shadow: 0 2px 12px rgba(236, 72, 153, 0.08);
-    overflow: hidden;
-  }
-  .badge {
-    display: inline-block;
-    padding: 2px 8px;
-    border-radius: 999px;
-    font-size: 12px;
-    font-weight: 500;
-  }
-  .btn-primary {
-    background: var(--primary);
-    color: white;
-    border-radius: 999px;
-    padding: 12px 24px;
-    font-weight: 600;
-    width: 100%;
-    text-align: center;
-    transition: all 0.2s;
-  }
-  .btn-primary:active { background: var(--primary-dark); transform: scale(0.98); }
-  .btn-primary:disabled { background: #d1d5db; color: #9ca3af; }
-  .btn-secondary {
-    background: var(--primary-light);
-    color: var(--primary-dark);
-    border-radius: 999px;
-    padding: 12px 24px;
-    font-weight: 600;
-    width: 100%;
-    text-align: center;
-  }
-  .btn-ghost {
-    background: white;
-    color: var(--primary);
-    border: 1.5px solid var(--primary);
-    border-radius: 999px;
-    padding: 10px 20px;
-    font-weight: 600;
-  }
-  .input-field {
-    width: 100%;
-    padding: 12px 16px;
-    border: 1.5px solid #e5e7eb;
-    border-radius: 12px;
-    font-size: 16px;
-    background: white;
-    transition: border-color 0.2s;
-  }
-  .input-field:focus { outline: none; border-color: var(--primary); }
-  .label-text { font-size: 14px; color: #6b7280; margin-bottom: 6px; display: block; font-weight: 500; }
-  .empty-state {
-    text-align: center;
-    padding: 60px 20px;
-    color: #9ca3af;
-  }
-  .toast {
-    position: fixed;
-    bottom: 100px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: rgba(0,0,0,0.85);
-    color: white;
-    padding: 10px 20px;
-    border-radius: 999px;
-    font-size: 14px;
-    z-index: 999;
-    animation: slideUp 0.3s;
-  }
-  @keyframes slideUp {
-    from { opacity: 0; transform: translate(-50%, 20px); }
-    to { opacity: 1; transform: translate(-50%, 0); }
-  }
-  .tab-bar {
-    position: fixed;
-    bottom: 0; left: 0; right: 0;
-    background: white;
-    border-top: 1px solid #f3f4f6;
-    display: flex;
-    padding: 8px 0;
-    padding-bottom: env(safe-area-inset-bottom, 8px);
-    z-index: 50;
-  }
-  .tab-item {
-    flex: 1;
-    text-align: center;
-    padding: 8px 0;
-    font-size: 12px;
-  }
-  .tab-icon { font-size: 22px; display: block; }
+  body { font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei","Helvetica Neue",sans-serif; background:linear-gradient(180deg,#fdf2f8 0%,#fff 100%); min-height:100vh; padding-bottom:80px; }
+  .score-ring { background:conic-gradient(var(--primary) var(--p,0%),#fce7f3 var(--p,0%)); border-radius:50%; display:flex; align-items:center; justify-content:center; }
+  .score-ring-inner { background:#fff; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-direction:column; }
+  .tab-active { color:var(--primary); border-bottom:2px solid var(--primary); }
+  .tab-inactive { color:#6b7280; }
+  .photo-slot { aspect-ratio:3/4; background:#fce7f3; border:2px dashed #f9a8d4; border-radius:12px; display:flex; align-items:center; justify-content:center; color:#ec4899; font-size:24px; cursor:pointer; overflow:hidden; position:relative; }
+  .photo-slot img { width:100%; height:100%; object-fit:cover; }
+  .photo-slot .remove { position:absolute; top:4px; right:4px; background:rgba(0,0,0,0.5); color:#fff; border-radius:50%; width:24px; height:24px; display:flex; align-items:center; justify-content:center; font-size:14px; }
+  .quiz-option { border:2px solid #f3f4f6; border-radius:12px; padding:12px 16px; cursor:pointer; transition:all .2s; background:#fff; }
+  .quiz-option:hover { border-color:#f9a8d4; }
+  .quiz-option.selected { border-color:var(--primary); background:var(--primary-light); }
+  .rec-card { background:#fff; border-radius:16px; box-shadow:0 2px 12px rgba(236,72,153,.08); overflow:hidden; }
+  .badge { display:inline-block; padding:2px 8px; border-radius:999px; font-size:12px; font-weight:500; }
+  .btn-primary { background:var(--primary); color:#fff; border-radius:999px; padding:12px 24px; font-weight:600; width:100%; text-align:center; transition:all .2s; }
+  .btn-primary:active { background:var(--primary-dark); transform:scale(.98); }
+  .btn-primary:disabled { background:#d1d5db; color:#9ca3af; }
+  .btn-secondary { background:var(--primary-light); color:var(--primary-dark); border-radius:999px; padding:12px 24px; font-weight:600; width:100%; text-align:center; }
+  .btn-ghost { background:#fff; color:var(--primary); border:1.5px solid var(--primary); border-radius:999px; padding:10px 20px; font-weight:600; }
+  .input-field { width:100%; padding:12px 16px; border:1.5px solid #e5e7eb; border-radius:12px; font-size:16px; background:#fff; transition:border-color .2s; }
+  .input-field:focus { outline:none; border-color:var(--primary); }
+  .label-text { font-size:14px; color:#6b7280; margin-bottom:6px; display:block; font-weight:500; }
+  .toast { position:fixed; bottom:100px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,.85); color:#fff; padding:10px 20px; border-radius:999px; font-size:14px; z-index:999; animation:slideUp .3s; }
+  @keyframes slideUp { from{opacity:0;transform:translate(-50%,20px);} to{opacity:1;transform:translate(-50%,0);} }
+  .tab-bar { position:fixed; bottom:0; left:0; right:0; background:#fff; border-top:1px solid #f3f4f6; display:flex; padding:8px 0; padding-bottom:env(safe-area-inset-bottom,8px); z-index:50; }
+  .tab-item { flex:1; text-align:center; padding:8px 0; font-size:12px; }
+  .tab-icon { font-size:22px; display:block; }
+  .modal-mask { position:fixed; inset:0; background:rgba(0,0,0,.5); display:flex; align-items:center; justify-content:center; z-index:200; }
+  .modal-box { background:#fff; border-radius:16px; padding:24px; width:90%; max-width:360px; }
+  .tag-chip { display:inline-flex; align-items:center; gap:4px; padding:6px 12px; border-radius:999px; border:1.5px solid #e5e7eb; cursor:pointer; font-size:13px; background:#fff; }
+  .tag-chip.selected { border-color:var(--primary); background:var(--primary-light); color:var(--primary-dark); }
+  .spinner { display:inline-block; width:18px; height:18px; border:2px solid #fff; border-top-color:transparent; border-radius:50%; animation:spin .7s linear infinite; }
+  @keyframes spin { to{transform:rotate(360deg);} }
 </style>
 </head>
 <body>
   <div id="app"></div>
   <div id="toast-container"></div>
+  <input type="file" id="photo-input" accept="image/*" style="display:none">
 
 <script>
-// ============== 颜值评分 10 题 ==============
-const FACE_QUESTIONS = [
-  { id: 1, key: 'face',     text: '你的五官协调度？',
-    options: [
-      { label: '有明显缺陷（歪、不对称、有较严重五官问题）', score: 2 },
-      { label: '五官端正，无硬伤', score: 6 },
-      { label: '五官精致协调，有记忆点', score: 10 }
-    ]},
-  { id: 2, key: 'skin',     text: '你的皮肤状态？',
-    options: [
-      { label: '皮肤粗糙 / 明显瑕疵', score: 2 },
-      { label: '皮肤状态一般', score: 6 },
-      { label: '皮肤光滑细腻', score: 10 }
-    ]},
-  { id: 3, key: 'bone',     text: '你的脸型 / 骨相？',
-    options: [
-      { label: '脸型偏大 / 骨相普通', score: 2 },
-      { label: '标准脸型', score: 6 },
-      { label: '小脸 / 上镜脸', score: 10 }
-    ]},
-  { id: 4, key: 'body',     text: '你的身材比例？',
-    options: [
-      { label: '身材比例不佳', score: 2 },
-      { label: '比例正常', score: 6 },
-      { label: '比例优越', score: 10 }
-    ]},
-  { id: 5, key: 'aura',     text: '你的气质气场？',
-    options: [
-      { label: '气质普通', score: 2 },
-      { label: '气质端正', score: 6 },
-      { label: '气质出众 / 有记忆点', score: 10 }
-    ]},
-  { id: 6, key: 'style',    text: '你的穿搭品味？',
-    options: [
-      { label: '穿搭随意', score: 2 },
-      { label: '穿搭得体', score: 6 },
-      { label: '穿搭有品味 / 出彩', score: 10 }
-    ]},
-  { id: 7, key: 'grooming', text: '你的妆发管理？',
-    options: [
-      { label: '不修边幅', score: 2 },
-      { label: '基本打理', score: 6 },
-      { label: '精致妆发', score: 10 }
-    ]},
-  { id: 8, key: 'recall',   text: '你的辨识度 / 记忆点？',
-    options: [
-      { label: '路人脸', score: 2 },
-      { label: '有一定辨识度', score: 6 },
-      { label: '过目不忘', score: 10 }
-    ]},
-  { id: 9, key: 'photo',    text: '你的表情管理 / 镜头感？',
-    options: [
-      { label: '拍照容易僵', score: 2 },
-      { label: '自然得体', score: 6 },
-      { label: '镜头感强 / 有感染力', score: 10 }
-    ]},
-  { id:10, key: 'overall',  text: '综合路人评价？',
-    options: [
-      { label: '不会引起注意', score: 2 },
-      { label: '小美女 / 小帅哥水平', score: 6 },
-      { label: '公认的美女 / 帅哥', score: 10 }
-    ]}
+// ============== 全国省份（只到省） ==============
+const REGIONS = ['北京','上海','天津','重庆','河北','山西','内蒙古','辽宁','吉林','黑龙江','江苏','浙江','安徽','福建','江西','山东','河南','湖北','湖南','广东','广西','海南','四川','贵州','云南','西藏','陕西','甘肃','青海','宁夏','新疆','香港','澳门','台湾'];
+
+const CONTACT_TYPES = [
+  { key: 'douyin', label: '抖音' },
+  { key: 'xiaohongshu', label: '小红书' },
+  { key: 'wechat', label: '微信' }
 ];
 
-// ============== 中国省份-城市（江浙沪为主） ==============
-const REGIONS = [
-  { province: '浙江', cities: ['杭州', '宁波', '温州', '嘉兴', '湖州', '绍兴', '金华', '衢州', '舟山', '台州', '丽水'] },
-  { province: '江苏', cities: ['南京', '苏州', '无锡', '常州', '镇江', '南通', '扬州', '盐城', '徐州', '淮安', '连云港', '宿迁', '泰州'] },
-  { province: '上海', cities: ['上海'] },
-  { province: '安徽', cities: ['合肥', '芜湖', '蚌埠', '淮南', '马鞍山', '淮北', '铜陵', '安庆', '黄山', '滁州', '阜阳', '宿州', '六安', '亳州', '池州', '宣城'] },
-  { province: '其他', cities: ['北京', '广东-广州', '广东-深圳', '福建-福州', '福建-厦门', '湖北-武汉', '湖南-长沙', '四川-成都'] }
-];
-
-// ============== 状态管理 ==============
+// ============== 状态 ==============
 const State = {
-  screen: 'home',          // home | form | quiz | result | recommend | sync | settings | leader
-  isLeader: false,
-  profile: null,           // 我的资料
-  groupData: [],           // 群数据
-  quizIndex: 0,
-  quizAnswers: [],
-  lastForm: null,          // 表单暂存
-  requirements: null,      // 择偶要求
-  groupMergedText: '',
-  recommendations: null,
-  seenIds: [],
+  screen: 'home', isLeader: false,
+  profile: null, groupData: [], seenIds: [],
+  groupPassword: null, baiduApiKey: null, baiduSecretKey: null,
+  tempPhotos: [], tempContactType: 'douyin'
 };
-
 const LS_KEYS = {
-  profile: 'xqbb_profile',
-  groupData: 'xqbb_group',
-  seenIds: 'xqbb_seen',
-  lastReset: 'xqbb_lastreset'
+  profile:'xqbb_profile', groupData:'xqbb_group', seenIds:'xqbb_seen',
+  lastReset:'xqbb_lastreset', password:'xqbb_password',
+  baiduKey:'xqbb_baidu_key', baiduSecret:'xqbb_baidu_secret'
 };
 
 function loadState() {
@@ -272,91 +75,106 @@ function loadState() {
     State.profile = JSON.parse(localStorage.getItem(LS_KEYS.profile) || 'null');
     State.groupData = JSON.parse(localStorage.getItem(LS_KEYS.groupData) || '[]');
     State.seenIds = JSON.parse(localStorage.getItem(LS_KEYS.seenIds) || '[]');
+    State.groupPassword = localStorage.getItem(LS_KEYS.password) || null;
+    State.baiduApiKey = localStorage.getItem(LS_KEYS.baiduKey) || null;
+    State.baiduSecretKey = localStorage.getItem(LS_KEYS.baiduSecret) || null;
   } catch(e) { console.error(e); }
   resetSeenIfNewDay();
 }
-
-function saveProfile() {
-  localStorage.setItem(LS_KEYS.profile, JSON.stringify(State.profile));
-}
-function saveGroupData() {
-  localStorage.setItem(LS_KEYS.groupData, JSON.stringify(State.groupData));
-}
-function saveSeen() {
-  localStorage.setItem(LS_KEYS.seenIds, JSON.stringify(State.seenIds));
-}
-
+function saveProfile() { localStorage.setItem(LS_KEYS.profile, JSON.stringify(State.profile)); }
+function saveGroupData() { localStorage.setItem(LS_KEYS.groupData, JSON.stringify(State.groupData)); }
+function saveSeen() { localStorage.setItem(LS_KEYS.seenIds, JSON.stringify(State.seenIds)); }
 function resetSeenIfNewDay() {
   const today = new Date().toDateString();
   if (localStorage.getItem(LS_KEYS.lastReset) !== today) {
-    State.seenIds = [];
-    saveSeen();
-    localStorage.setItem(LS_KEYS.lastReset, today);
+    State.seenIds = []; saveSeen(); localStorage.setItem(LS_KEYS.lastReset, today);
   }
 }
 
-// ============== 工具函数 ==============
-function uid() {
-  return 'p_' + Math.random().toString(36).slice(2, 9) + Date.now().toString(36).slice(-3);
-}
-
-function showToast(msg, duration = 1800) {
+// ============== 工具 ==============
+function uid() { return 'p_' + Math.random().toString(36).slice(2,9) + Date.now().toString(36).slice(-3); }
+function showToast(msg, duration=1800) {
   const c = document.getElementById('toast-container');
-  const t = document.createElement('div');
-  t.className = 'toast';
-  t.textContent = msg;
-  c.appendChild(t);
-  setTimeout(() => t.remove(), duration);
+  const t = document.createElement('div'); t.className='toast'; t.textContent=msg;
+  c.appendChild(t); setTimeout(()=>t.remove(), duration);
 }
-
 function copyToClipboard(text) {
-  if (navigator.clipboard) {
-    navigator.clipboard.writeText(text).then(() => showToast('已复制到剪贴板'));
-  } else {
-    const ta = document.createElement('textarea');
-    ta.value = text;
-    document.body.appendChild(ta);
-    ta.select();
-    document.execCommand('copy');
-    document.body.removeChild(ta);
-    showToast('已复制到剪贴板');
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(()=>showToast('已复制到剪贴板'), ()=>fallbackCopy(text));
+  } else fallbackCopy(text);
+}
+function fallbackCopy(text) {
+  const ta=document.createElement('textarea'); ta.value=text; document.body.appendChild(ta);
+  ta.select(); document.execCommand('copy'); document.body.removeChild(ta); showToast('已复制到剪贴板');
+}
+function shuffle(arr){ const a=[...arr]; for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
+function contactLabel(t){ const f=CONTACT_TYPES.find(c=>c.key===t); return f?f.label:t; }
+
+// ============== 照片压缩 ==============
+function compressImage(file, callback) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const maxW = 800;
+      const scale = Math.min(1, maxW / img.width);
+      canvas.width = Math.round(img.width * scale);
+      canvas.height = Math.round(img.height * scale);
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      callback(canvas.toDataURL('image/jpeg', 0.72));
+    };
+    img.onerror = () => showToast('图片读取失败');
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+// ============== AI 颜值打分（百度 AI） ==============
+async function getBaiduToken() {
+  const key=State.baiduApiKey, secret=State.baiduSecretKey;
+  if(!key || !secret) throw new Error('NO_KEY');
+  const url = `https://aip.baidubce.com/oauth/2.0/token?grant_type=client_credentials&client_id=${encodeURIComponent(key)}&client_secret=${encodeURIComponent(secret)}`;
+  const res = await fetch(url, { method:'POST' });
+  const data = await res.json();
+  if(data.access_token) return data.access_token;
+  throw new Error(data.error_description || 'token获取失败');
+}
+async function detectFace(base64DataUrl) {
+  const token = await getBaiduToken();
+  const url = `https://aip.baidubce.com/rest/2.0/face/v3/detect?access_token=${token}`;
+  const pure = base64DataUrl.replace(/^data:image\/\w+;base64,/, '');
+  const res = await fetch(url, {
+    method:'POST',
+    headers:{ 'Content-Type':'application/json' },
+    body: JSON.stringify({ image:pure, image_type:'BASE64', face_field:'beauty,age,gender' })
+  });
+  const data = await res.json();
+  if(data.error_code===0 && data.result && data.result.face_num>0) {
+    const face = data.result.face_list[0];
+    return { beauty:face.beauty, age:face.age, gender:face.gender?face.gender.type:null };
   }
+  throw new Error(data.error_msg || '未检测到清晰人脸');
 }
 
-function calcFaceScore(answers) {
-  // answers 是 10 个 score 数字
-  const total = answers.reduce((s, x) => s + x, 0);
-  return Math.round(total / 10 * 10) / 10;  // 1 位小数
-}
-
-function shuffle(arr) {
-  const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-}
-
-// ============== 匹配逻辑 ==============
+// ============== 匹配 ==============
 function getRecommendations() {
-  if (!State.profile) return [];
+  if(!State.profile) return [];
   resetSeenIfNewDay();
-  const r = State.profile.requirement;
-  const me = State.profile;
+  const r=State.profile.requirement, me=State.profile;
   const candidates = State.groupData.filter(p => {
-    if (p.id === me.id) return false;
-    if (State.seenIds.includes(p.id)) return false;
-    if (p.gender !== r.gender) return false;
-    if (p.age < r.ageMin || p.age > r.ageMax) return false;
-    if (p.height < r.heightMin || p.height > r.heightMax) return false;
-    if ((p.faceScore || 0) < (r.faceScoreMin || 0)) return false;
-    if (!r.hometowns || r.hometowns.length === 0) return true;
-    if (!r.hometowns.includes(p.hometown)) return false;
+    if(p.id===me.id) return false;
+    if(State.seenIds.includes(p.id)) return false;
+    if(p.gender!==r.gender) return false;
+    if(p.age<r.ageMin || p.age>r.ageMax) return false;
+    if(p.height<r.heightMin || p.height>r.heightMax) return false;
+    if((p.faceScore||0) < (r.faceScoreMin||0)) return false;
+    if(r.hometowns && r.hometowns.length>0 && !r.hometowns.includes(p.hometown)) return false;
     return true;
   });
-  const picked = shuffle(candidates).slice(0, 5);
-  State.seenIds = [...State.seenIds, ...picked.map(p => p.id)];
+  const picked = shuffle(candidates).slice(0,5);
+  State.seenIds = [...State.seenIds, ...picked.map(p=>p.id)];
   saveSeen();
   return picked;
 }
@@ -364,710 +182,437 @@ function getRecommendations() {
 // ============== 渲染 ==============
 function render() {
   const app = document.getElementById('app');
-  if (State.isLeader) {
-    app.innerHTML = renderLeader();
-    bindLeader();
-    return;
-  }
-  let main = '';
-  switch (State.screen) {
-    case 'home':       main = renderHome(); break;
-    case 'form':       main = renderForm(); break;
-    case 'quiz':       main = renderQuiz(); break;
-    case 'result':     main = renderResult(); break;
-    case 'recommend':  main = renderRecommend(); break;
-    case 'sync':       main = renderSync(); break;
-    case 'settings':   main = renderSettings(); break;
-    default:           main = renderHome();
+  if(State.isLeader) { app.innerHTML = renderLeader(); bindLeader(); return; }
+  let main='';
+  switch(State.screen) {
+    case 'home': main=renderHome(); break;
+    case 'form': main=renderForm(); break;
+    case 'quiz': main=renderQuiz(); break;
+    case 'result': main=renderResult(); break;
+    case 'recommend': main=renderRecommend(); break;
+    case 'sync': main=renderSync(); break;
+    case 'settings': main=renderSettings(); break;
+    default: main=renderHome();
   }
   app.innerHTML = main + renderTabBar();
   bindScreen();
 }
-
 function renderTabBar() {
-  const items = [
-    { id: 'home',      icon: '🏠', label: '首页' },
-    { id: 'recommend', icon: '💘', label: '推荐' },
-    { id: 'sync',      icon: '🔄', label: '群数据' },
-    { id: 'settings',  icon: '⚙️', label: '我的' }
-  ];
-  return `
-    <div class="tab-bar">
-      ${items.map(it => `
-        <div class="tab-item ${State.screen === it.id ? 'tab-active' : 'tab-inactive'}" data-screen="${it.id}">
-          <span class="tab-icon">${it.icon}</span>
-          ${it.label}
-        </div>
-      `).join('')}
-    </div>`;
+  const items=[['home','🏠','首页'],['recommend','💘','推荐'],['sync','🔄','群数据'],['settings','⚙️','我的']];
+  return `<div class="tab-bar">${items.map(it=>`<div class="tab-item ${State.screen===it[0]?'tab-active':'tab-inactive'}" data-screen="${it[0]}"><span class="tab-icon">${it[1]}</span>${it[2]}</div>`).join('')}</div>`;
 }
 
-// ============== 各个 Screen ==============
-
+// ============== 首页 ==============
 function renderHome() {
-  if (!State.profile) {
-    return `
-      <div class="px-5 pt-12">
-        <div class="text-center mb-8">
-          <div class="text-5xl mb-3">💖</div>
-          <h1 class="text-2xl font-bold text-gray-800">杭州相亲帮帮</h1>
-          <p class="text-sm text-gray-500 mt-2">群内破冰 · 颜值打分 · 智能匹配</p>
-        </div>
-        <div class="bg-white rounded-2xl p-5 shadow-sm mb-4">
-          <h3 class="font-bold text-gray-800 mb-3">📌 这是什么？</h3>
-          <p class="text-sm text-gray-600 leading-relaxed">
-            群主在「相亲帮帮群」里收集大家的资料和颜值评分，
-            每天给每人推荐 5 个符合要求的群友。
-            零外部服务器，全部数据存在你手机本地。
-          </p>
-        </div>
-        <div class="bg-white rounded-2xl p-5 shadow-sm mb-6">
-          <h3 class="font-bold text-gray-800 mb-3">✨ 怎么用？</h3>
-          <ol class="text-sm text-gray-600 leading-relaxed space-y-2">
-            <li>1️⃣ 填写你的资料（昵称、身高、老家、照片）</li>
-            <li>2️⃣ 完成 10 题颜值自评（约 1 分钟）</li>
-            <li>3️⃣ 复制你的资料发到群里</li>
-            <li>4️⃣ 导入群主的合并数据，看推荐</li>
-          </ol>
-        </div>
-        <button class="btn-primary" data-act="go-form">开始填写资料 →</button>
-        <div class="text-center mt-3">
-          <button class="text-sm text-pink-500" data-act="toggle-leader">我是群主</button>
-        </div>
-      </div>
-    `;
+  if(!State.profile) {
+    return `<div class="px-5 pt-12">
+      <div class="text-center mb-8"><div class="text-5xl mb-3">💖</div><h1 class="text-2xl font-bold text-gray-800">杭州相亲帮帮</h1><p class="text-sm text-gray-500 mt-2">上传照片 · AI 颜值打分 · 每日匹配</p></div>
+      <div class="bg-white rounded-2xl p-5 shadow-sm mb-4"><h3 class="font-bold text-gray-800 mb-3">📌 这是什么？</h3><p class="text-sm text-gray-600 leading-relaxed">群主在「相亲帮帮群」收集资料，AI 给颜值客观打分，每天给你推荐 5 个符合条件的群友。</p></div>
+      <div class="bg-white rounded-2xl p-5 shadow-sm mb-6"><h3 class="font-bold text-gray-800 mb-3">✨ 怎么用？</h3><ol class="text-sm text-gray-600 leading-relaxed space-y-2"><li>1️⃣ 填资料 + 上传照片</li><li>2️⃣ AI 系统打分（客观颜值分）</li><li>3️⃣ 复制资料发到群里</li><li>4️⃣ 导入群数据，看每日推荐</li></ol></div>
+      <button class="btn-primary" data-act="go-form">开始填写资料 →</button>
+    </div>`;
   }
-  // 已填资料
   const p = State.profile;
-  return `
-    <div class="px-5 pt-8">
-      <div class="bg-white rounded-2xl p-5 shadow-sm mb-4">
-        <div class="flex items-center gap-4">
-          <div class="score-ring" style="width:80px;height:80px;--p:${(p.faceScore/10)*360}deg">
-            <div class="score-ring-inner" style="width:64px;height:64px">
-              <div class="text-xl font-bold text-pink-500">${p.faceScore.toFixed(1)}</div>
-              <div class="text-[10px] text-gray-400">颜值分</div>
-            </div>
-          </div>
-          <div class="flex-1">
-            <div class="font-bold text-lg text-gray-800">${p.nickname}</div>
-            <div class="text-sm text-gray-500 mt-1">
-              ${p.gender === 'female' ? '♀' : '♂'} · ${p.age}岁 · ${p.height}cm
-            </div>
-            <div class="text-sm text-gray-500">📍 ${p.hometown}</div>
-          </div>
+  return `<div class="px-5 pt-8">
+    <div class="bg-white rounded-2xl p-5 shadow-sm mb-4">
+      <div class="flex items-center gap-4">
+        <div class="score-ring" style="width:80px;height:80px;--p:${((p.faceScore||0)/10)*360}deg"><div class="score-ring-inner" style="width:64px;height:64px"><div class="text-xl font-bold text-pink-500">${p.faceScore?p.faceScore.toFixed(1):'-'}</div><div class="text-[10px] text-gray-400">颜值分</div></div></div>
+        <div class="flex-1">
+          <div class="font-bold text-lg text-gray-800">${p.nickname}</div>
+          <div class="text-sm text-gray-500 mt-1">${p.gender==='female'?'♀':'♂'} · ${p.age}岁 · ${p.height}cm</div>
+          <div class="text-sm text-gray-500">📍 ${p.hometown}</div>
         </div>
       </div>
-
-      <div class="grid grid-cols-2 gap-3 mb-4">
-        <button class="btn-secondary" data-act="go-form">📝 编辑资料</button>
-        <button class="btn-secondary" data-act="copy-me">📤 复制我的资料</button>
-      </div>
-
-      <div class="bg-white rounded-2xl p-5 shadow-sm mb-4">
-        <h3 class="font-bold text-gray-800 mb-3">🎯 择偶要求</h3>
-        <div class="text-sm text-gray-600 space-y-1">
-          <div>性别：${p.requirement.gender === 'male' ? '男' : '女'}</div>
-          <div>年龄：${p.requirement.ageMin} - ${p.requirement.ageMax} 岁</div>
-          <div>身高：${p.requirement.heightMin} - ${p.requirement.heightMax} cm</div>
-          <div>老家：${p.requirement.hometowns.join(' / ')}</div>
-          <div>颜值分：≥ ${p.requirement.faceScoreMin} 分</div>
-        </div>
-      </div>
-
-      <div class="bg-white rounded-2xl p-5 shadow-sm mb-4">
-        <h3 class="font-bold text-gray-800 mb-2">📊 群数据状态</h3>
-        <div class="text-sm text-gray-600">群内已导入 <b class="text-pink-500">${State.groupData.length}</b> 位（含你）</div>
-        <div class="text-xs text-gray-400 mt-1">今天已推荐：${State.seenIds.length} 位</div>
-      </div>
-
-      <button class="btn-primary" data-act="go-recommend">💘 查看今日 5 个推荐</button>
     </div>
-  `;
+    <div class="grid grid-cols-2 gap-3 mb-4">
+      <button class="btn-secondary" data-act="go-form">📝 编辑资料</button>
+      <button class="btn-secondary" data-act="copy-me">📤 复制我的资料</button>
+    </div>
+    <div class="bg-white rounded-2xl p-5 shadow-sm mb-4"><h3 class="font-bold text-gray-800 mb-3">🎯 择偶要求</h3><div class="text-sm text-gray-600 space-y-1"><div>性别：${p.requirement.gender==='male'?'男':'女'}</div><div>年龄：${p.requirement.ageMin} - ${p.requirement.ageMax} 岁</div><div>身高：${p.requirement.heightMin} - ${p.requirement.heightMax} cm</div><div>老家：${p.requirement.hometowns.length?p.requirement.hometowns.join(' / '):'不限'}</div><div>颜值分：≥ ${p.requirement.faceScoreMin} 分</div></div></div>
+    <div class="bg-white rounded-2xl p-5 shadow-sm mb-4"><h3 class="font-bold text-gray-800 mb-2">📊 群数据状态</h3><div class="text-sm text-gray-600">群内已导入 <b class="text-pink-500">${State.groupData.length}</b> 位（含你）</div><div class="text-xs text-gray-400 mt-1">今天已推荐：${State.seenIds.length} 位</div></div>
+    <button class="btn-primary" data-act="go-recommend">💘 查看今日 5 个推荐</button>
+  </div>`;
 }
 
+// ============== 填写资料 ==============
 function renderForm() {
   const p = State.profile || {};
-  const r = p.requirement || {
-    gender: 'male', ageMin: 25, ageMax: 32, heightMin: 170, heightMax: 195,
-    hometowns: ['浙江-杭州', '浙江-宁波', '江苏-南京', '上海'], faceScoreMin: 5
-  };
-  return `
-    <div class="px-5 pt-6">
-      <div class="flex items-center mb-5">
-        <button class="text-2xl text-gray-500" data-act="back">←</button>
-        <h2 class="text-lg font-bold text-gray-800 ml-3">填写资料</h2>
-      </div>
-
-      <div class="bg-white rounded-2xl p-5 shadow-sm mb-4">
-        <div class="mb-4">
-          <label class="label-text">昵称（群里显示用）</label>
-          <input class="input-field" id="f-nickname" value="${p.nickname||''}" placeholder="例如：杭州小美" maxlength="12">
-        </div>
-        <div class="mb-4">
-          <label class="label-text">微信号（方便群里 @你）</label>
-          <input class="input-field" id="f-wechat" value="${p.wechat||''}" placeholder="可选，填了方便联系">
-        </div>
-        <div class="mb-4">
-          <label class="label-text">性别</label>
-          <div class="grid grid-cols-2 gap-2">
-            <div class="quiz-option ${(p.gender||'female')==='female'?'selected':''}" data-radio="gender" data-val="female">♀ 女</div>
-            <div class="quiz-option ${(p.gender||'female')==='male'?'selected':''}" data-radio="gender" data-val="male">♂ 男</div>
-          </div>
-        </div>
-        <div class="grid grid-cols-2 gap-3 mb-4">
-          <div>
-            <label class="label-text">年龄</label>
-            <input class="input-field" type="number" id="f-age" value="${p.age||26}" min="18" max="60">
-          </div>
-          <div>
-            <label class="label-text">身高 (cm)</label>
-            <input class="input-field" type="number" id="f-height" value="${p.height||165}" min="140" max="220">
-          </div>
-        </div>
-        <div class="mb-4">
-          <label class="label-text">老家（省-市）</label>
-          <select class="input-field" id="f-hometown">
-            ${REGIONS.map(reg => `<optgroup label="${reg.province}">${reg.cities.map(c => `<option value="${reg.province}-${c}" ${p.hometown===reg.province+'-'+c?'selected':''}>${reg.province}-${c}</option>`).join('')}</optgroup>`).join('')}
-          </select>
-        </div>
-        <div class="mb-2">
-          <label class="label-text">3 张照片链接（小红书/网盘/微信相册链接）</label>
-          <div class="grid grid-cols-3 gap-2" id="photo-grid">
-            ${[0,1,2].map(i => {
-              const url = (p.photos||[])[i] || '';
-              return `<div class="photo-slot" data-photo="${i}">
-                ${url ? `<img src="${url}"><div class="remove" data-rm-photo="${i}">×</div>` : '<span>+</span>'}
-              </div>`;
-            }).join('')}
-          </div>
-          <div class="text-xs text-gray-400 mt-2">点击格子粘贴图片链接（建议公开相册直链）</div>
-        </div>
-      </div>
-
-      <div class="bg-white rounded-2xl p-5 shadow-sm mb-4">
-        <h3 class="font-bold text-gray-800 mb-3">🎯 择偶要求</h3>
-        <div class="mb-4">
-          <label class="label-text">期望对方性别</label>
-          <div class="grid grid-cols-2 gap-2">
-            <div class="quiz-option ${r.gender==='female'?'selected':''}" data-radio="r-gender" data-val="female">♀ 女</div>
-            <div class="quiz-option ${r.gender==='male'?'selected':''}" data-radio="r-gender" data-val="male">♂ 男</div>
-          </div>
-        </div>
-        <div class="grid grid-cols-2 gap-3 mb-4">
-          <div>
-            <label class="label-text">年龄范围</label>
-            <div class="flex items-center gap-2">
-              <input class="input-field" type="number" id="r-ageMin" value="${r.ageMin}" min="18" max="60">
-              <span>-</span>
-              <input class="input-field" type="number" id="r-ageMax" value="${r.ageMax}" min="18" max="60">
-            </div>
-          </div>
-          <div>
-            <label class="label-text">身高 (cm)</label>
-            <div class="flex items-center gap-2">
-              <input class="input-field" type="number" id="r-hMin" value="${r.heightMin}" min="140" max="220">
-              <span>-</span>
-              <input class="input-field" type="number" id="r-hMax" value="${r.heightMax}" min="140" max="220">
-            </div>
-          </div>
-        </div>
-        <div class="mb-4">
-          <label class="label-text">最低颜值分</label>
-          <input class="input-field" type="number" id="r-faceMin" value="${r.faceScoreMin}" min="0" max="10" step="0.5">
-        </div>
-        <div class="mb-2">
-          <label class="label-text">接受的老家（多选）</label>
-          <div class="grid grid-cols-2 gap-2" id="r-hometowns">
-            ${['浙江-杭州', '浙江-宁波', '浙江-温州', '浙江-嘉兴', '浙江-绍兴', '浙江-金华', '江苏-南京', '江苏-苏州', '江苏-无锡', '江苏-常州', '上海', '安徽-合肥', '其他'].map(ht => `
-              <div class="quiz-option ${r.hometowns.includes(ht)?'selected':''}" data-toggle-ht="${ht}">${ht}</div>
-            `).join('')}
-          </div>
-        </div>
-      </div>
-
-      <button class="btn-primary mb-3" data-act="form-next">下一步：颜值自评 →</button>
-      <button class="btn-ghost w-full" data-act="back">取消</button>
+  const r = p.requirement || { gender:'male', ageMin:25, ageMax:32, heightMin:170, heightMax:195, hometowns:[], faceScoreMin:5 };
+  const photos = State.tempPhotos.length ? State.tempPhotos : (p.photos || []);
+  const ct = State.tempContactType || p.contact?.type || 'douyin';
+  const opts = REGIONS.map(rg=>`<option value="${rg}" ${p.hometown===rg?'selected':''}>${rg}</option>`).join('');
+  return `<div class="px-5 pt-6">
+    <div class="flex items-center mb-5"><button class="text-2xl text-gray-500" data-act="back">←</button><h2 class="text-lg font-bold text-gray-800 ml-3">填写资料</h2></div>
+    <div class="bg-white rounded-2xl p-5 shadow-sm mb-4">
+      <div class="mb-4"><label class="label-text">昵称（群里显示用）</label><input class="input-field" id="f-nickname" value="${p.nickname||''}" placeholder="例如：杭州小美" maxlength="12"></div>
+      <div class="mb-4"><label class="label-text">性别</label><div class="grid grid-cols-2 gap-2"><div class="quiz-option ${(p.gender||'female')==='female'?'selected':''}" data-radio="gender" data-val="female">♀ 女</div><div class="quiz-option ${(p.gender||'female')==='male'?'selected':''}" data-radio="gender" data-val="male">♂ 男</div></div></div>
+      <div class="grid grid-cols-2 gap-3 mb-4"><div><label class="label-text">年龄</label><input class="input-field" type="number" id="f-age" value="${p.age||26}" min="18" max="60"></div><div><label class="label-text">身高 (cm)</label><input class="input-field" type="number" id="f-height" value="${p.height||165}" min="140" max="220"></div></div>
+      <div class="mb-4"><label class="label-text">老家（省）</label><select class="input-field" id="f-hometown">${opts}</select></div>
+      <div class="mb-4"><label class="label-text">联系方式（选一种，填账号）</label><div class="flex gap-2 mb-2" id="contact-type">${CONTACT_TYPES.map(c=>`<div class="tag-chip ${ct===c.key?'selected':''}" data-radio="contact" data-val="${c.key}">${c.label}</div>`).join('')}</div><input class="input-field" id="f-contact-account" value="${p.contact?.account||''}" placeholder="填写对应账号（如抖音号 / 小红书号 / 微信号）"></div>
+      <div class="mb-2"><label class="label-text">上传照片（用于 AI 颜值打分，建议正面清晰照）</label><div class="grid grid-cols-3 gap-2" id="photo-grid">${[0,1,2].map(i=>`<div class="photo-slot" data-photo="${i}">${photos[i]?`<img src="${photos[i]}"><div class="remove" data-rm-photo="${i}">×</div>`:'<span>+</span>'}</div>`).join('')}</div><div class="text-xs text-gray-400 mt-2">点击格子选择本地照片（自动压缩）</div></div>
     </div>
-  `;
+    <div class="bg-white rounded-2xl p-5 shadow-sm mb-4">
+      <h3 class="font-bold text-gray-800 mb-3">🎯 择偶要求</h3>
+      <div class="mb-4"><label class="label-text">期望对方性别</label><div class="grid grid-cols-2 gap-2"><div class="quiz-option ${r.gender==='female'?'selected':''}" data-radio="r-gender" data-val="female">♀ 女</div><div class="quiz-option ${r.gender==='male'?'selected':''}" data-radio="r-gender" data-val="male">♂ 男</div></div></div>
+      <div class="grid grid-cols-2 gap-3 mb-4"><div><label class="label-text">年龄范围</label><div class="flex items-center gap-2"><input class="input-field" type="number" id="r-ageMin" value="${r.ageMin}" min="18" max="60"><span>-</span><input class="input-field" type="number" id="r-ageMax" value="${r.ageMax}" min="18" max="60"></div></div><div><label class="label-text">身高 (cm)</label><div class="flex items-center gap-2"><input class="input-field" type="number" id="r-hMin" value="${r.heightMin}" min="140" max="220"><span>-</span><input class="input-field" type="number" id="r-hMax" value="${r.heightMax}" min="140" max="220"></div></div></div>
+      <div class="mb-4"><label class="label-text">最低颜值分</label><input class="input-field" type="number" id="r-faceMin" value="${r.faceScoreMin}" min="0" max="10" step="0.5"></div>
+      <div class="mb-2"><label class="label-text">接受的老家（可多选，不选=不限）</label><div class="flex flex-wrap gap-2" id="r-hometowns">${REGIONS.map(h=>`<div class="tag-chip ${r.hometowns.includes(h)?'selected':''}" data-toggle-ht="${h}">${h}</div>`).join('')}</div></div>
+    </div>
+    <button class="btn-primary mb-3" data-act="form-next">下一步：AI 颜值打分 →</button>
+    <button class="btn-ghost w-full" data-act="back">取消</button>
+  </div>`;
 }
 
+// ============== AI 颜值打分 ==============
 function renderQuiz() {
-  const i = State.quizIndex;
-  const q = FACE_QUESTIONS[i];
-  const ans = State.quizAnswers[i];
-  const progress = ((i + 1) / FACE_QUESTIONS.length) * 100;
-  return `
-    <div class="px-5 pt-6">
-      <div class="flex items-center mb-4">
-        <button class="text-2xl text-gray-500" data-act="quiz-back">←</button>
-        <div class="ml-3 text-sm text-gray-500">颜值自评 · ${i+1}/${FACE_QUESTIONS.length}</div>
-      </div>
-      <div class="w-full bg-gray-100 rounded-full h-1.5 mb-6">
-        <div class="bg-pink-500 h-1.5 rounded-full" style="width:${progress}%; transition:width 0.3s"></div>
-      </div>
-      <div class="text-2xl font-bold text-gray-800 mb-6">${q.text}</div>
-      <div class="space-y-3 mb-8">
-        ${q.options.map((o, idx) => `
-          <div class="quiz-option ${ans===o.score?'selected':''}" data-quiz-opt="${idx}">
-            <div class="font-medium text-gray-800">${o.label}</div>
-          </div>
-        `).join('')}
-      </div>
-      <button class="btn-primary" data-act="quiz-next" ${ans===undefined?'disabled':''}>
-        ${i === FACE_QUESTIONS.length-1 ? '完成测评 🎉' : '下一题 →'}
-      </button>
+  const photos = State.tempPhotos.length ? State.tempPhotos : (State.profile?.photos || []);
+  const hasPhoto = photos.length > 0 && photos[0];
+  return `<div class="px-5 pt-6">
+    <div class="flex items-center mb-5"><button class="text-2xl text-gray-500" data-act="back">←</button><h2 class="text-lg font-bold text-gray-800 ml-3">AI 颜值打分</h2></div>
+    <div class="bg-white rounded-2xl p-5 shadow-sm mb-4 text-center">
+      ${hasPhoto ? `<img src="${photos[0]}" class="w-40 h-52 object-cover rounded-xl mx-auto mb-4">` : `<div class="w-40 h-52 bg-pink-50 rounded-xl mx-auto mb-4 flex items-center justify-center text-pink-300 text-4xl">📷</div>`}
+      <p class="text-sm text-gray-600 mb-3">${hasPhoto ? '将用这张照片进行 AI 客观打分' : '请先回到上一步上传照片'}</p>
+      <div id="quiz-result"></div>
+      <button class="btn-primary mt-3" id="quiz-start" data-act="quiz-start" ${hasPhoto?'':'disabled'}>🤖 开始系统打分</button>
+      <p class="text-xs text-gray-400 mt-2">由 AI 人脸识别模型客观评分（0-100 分制换算）</p>
     </div>
-  `;
+    <button class="btn-ghost w-full" data-act="back">返回修改资料</button>
+  </div>`;
 }
 
+// ============== 结果页 ==============
 function renderResult() {
   const p = State.profile;
-  if (!p) return renderHome();
-  const desc = p.faceScore >= 8.5 ? '神级颜值，走到哪都是焦点' :
-               p.faceScore >= 7   ? '公认美女/帅哥级别，约会必翻牌' :
-               p.faceScore >= 6   ? '中上水平，会打扮能再上一层楼' :
-               p.faceScore >= 4.5 ? '正常水平，靠气质和穿搭提分' :
-                                    '潜力股，靠内在魅力取胜';
-  return `
-    <div class="px-5 pt-8">
-      <div class="text-center mb-6">
-        <div class="text-4xl mb-2">🎉</div>
-        <h2 class="text-2xl font-bold text-gray-800">测评完成</h2>
-        <p class="text-sm text-gray-500 mt-1">你的颜值分已经生成</p>
-      </div>
-      <div class="bg-white rounded-2xl p-8 shadow-sm mb-4">
-        <div class="flex justify-center mb-4">
-          <div class="score-ring" style="width:160px;height:160px;--p:${(p.faceScore/10)*360}deg">
-            <div class="score-ring-inner" style="width:130px;height:130px">
-              <div class="text-5xl font-bold text-pink-500">${p.faceScore.toFixed(1)}</div>
-              <div class="text-xs text-gray-400 mt-1">/ 10</div>
-            </div>
-          </div>
-        </div>
-        <div class="text-center text-gray-600">${desc}</div>
-      </div>
-      <div class="bg-white rounded-2xl p-5 shadow-sm mb-4">
-        <h3 class="font-bold text-gray-800 mb-3">📤 下一步</h3>
-        <ol class="text-sm text-gray-600 leading-relaxed space-y-2">
-          <li>1️⃣ 复制你的资料 → 发到相亲帮帮群</li>
-          <li>2️⃣ 等群主合并后导入群数据</li>
-          <li>3️⃣ 每天自动推荐 5 个符合要求的群友</li>
-        </ol>
-      </div>
-      <button class="btn-primary mb-3" data-act="copy-me">📤 复制我的资料</button>
-      <button class="btn-secondary" data-act="go-home">返回首页</button>
-    </div>
-  `;
+  if(!p) return renderHome();
+  const desc = (p.faceScore||0)>=8.5?'神级颜值，走到哪都是焦点':(p.faceScore||0)>=7?'公认美女/帅哥级别':(p.faceScore||0)>=6?'中上水平':(p.faceScore||0)>=4.5?'正常水平':'潜力股，靠气质和内在取胜';
+  return `<div class="px-5 pt-8">
+    <div class="text-center mb-6"><div class="text-4xl mb-2">🎉</div><h2 class="text-2xl font-bold text-gray-800">打分完成</h2><p class="text-sm text-gray-500 mt-1">AI 已生成你的客观颜值分</p></div>
+    <div class="bg-white rounded-2xl p-8 shadow-sm mb-4"><div class="flex justify-center mb-4"><div class="score-ring" style="width:160px;height:160px;--p:${((p.faceScore||0)/10)*360}deg"><div class="score-ring-inner" style="width:130px;height:130px"><div class="text-5xl font-bold text-pink-500">${(p.faceScore||0).toFixed(1)}</div><div class="text-xs text-gray-400 mt-1">/ 10</div></div></div></div><div class="text-center text-gray-600">${desc}</div></div>
+    <div class="bg-white rounded-2xl p-5 shadow-sm mb-4"><h3 class="font-bold text-gray-800 mb-3">📤 下一步</h3><ol class="text-sm text-gray-600 leading-relaxed space-y-2"><li>1️⃣ 复制你的资料 → 发到相亲帮帮群</li><li>2️⃣ 等群主合并后导入群数据</li><li>3️⃣ 每天自动推荐 5 个符合条件的群友</li></ol></div>
+    <button class="btn-primary mb-3" data-act="copy-me">📤 复制我的资料</button>
+    <button class="btn-secondary" data-act="go-home">返回首页</button>
+  </div>`;
 }
 
+// ============== 推荐 ==============
 function renderRecommend() {
-  if (!State.profile) {
-    return `<div class="px-5 pt-12 text-center">
-      <div class="text-5xl mb-3">📋</div>
-      <p class="text-gray-500 mb-4">先填写资料才能看推荐</p>
-      <button class="btn-primary" data-act="go-form">去填资料 →</button>
-    </div>`;
+  if(!State.profile) {
+    return `<div class="px-5 pt-12 text-center"><div class="text-5xl mb-3">📋</div><p class="text-gray-500 mb-4">先填写资料才能看推荐</p><button class="btn-primary" data-act="go-form">去填资料 →</button></div>`;
   }
-  if (State.groupData.length < 2) {
-    return `<div class="px-5 pt-12 text-center">
-      <div class="text-5xl mb-3">🫂</div>
-      <p class="text-gray-700 font-medium mb-2">群里还没有其他人的资料</p>
-      <p class="text-sm text-gray-500 mb-4">先去群里把你的资料分享出去<br>再让群主合并后导入</p>
-      <button class="btn-secondary" data-act="goto-sync">去导入群数据 →</button>
-    </div>`;
+  if(State.groupData.length < 2) {
+    return `<div class="px-5 pt-12 text-center"><div class="text-5xl mb-3">🫂</div><p class="text-gray-700 font-medium mb-2">群里还没有其他人的资料</p><p class="text-sm text-gray-500 mb-4">先去群里分享你的资料<br>再让群主合并后导入</p><button class="btn-secondary" data-act="goto-sync">去导入群数据 →</button></div>`;
   }
   const recs = getRecommendations();
-  if (recs.length === 0) {
-    return `<div class="px-5 pt-12 text-center">
-      <div class="text-5xl mb-3">😢</div>
-      <p class="text-gray-700 font-medium mb-2">今天符合要求的都被推荐过啦</p>
-      <p class="text-sm text-gray-500 mb-4">明天 0 点会重置已推荐池</p>
-      <button class="btn-secondary" data-act="goto-settings">放宽要求 →</button>
-    </div>`;
+  if(recs.length===0) {
+    return `<div class="px-5 pt-12 text-center"><div class="text-5xl mb-3">😢</div><p class="text-gray-700 font-medium mb-2">今天符合要求的都被推荐过啦</p><p class="text-sm text-gray-500 mb-4">明天 0 点会重置已推荐池</p><button class="btn-secondary" data-act="goto-settings">放宽要求 →</button></div>`;
   }
-  return `
-    <div class="px-5 pt-6">
-      <div class="flex items-center justify-between mb-4">
-        <h2 class="text-lg font-bold text-gray-800">💘 今日 5 个推荐</h2>
-        <span class="text-xs text-gray-400">已推荐 ${State.seenIds.length}</span>
-      </div>
-      <div class="space-y-3">
-        ${recs.map(p => `
-          <div class="rec-card p-4">
-            <div class="flex gap-3">
-              <div class="w-20 h-24 rounded-lg overflow-hidden bg-pink-50 flex-shrink-0">
-                ${p.photos && p.photos[0] ? `<img src="${p.photos[0]}" class="w-full h-full object-cover" onerror="this.style.display='none'">` : '<div class="w-full h-full flex items-center justify-center text-pink-300 text-2xl">📷</div>'}
-              </div>
-              <div class="flex-1 min-w-0">
-                <div class="flex items-center gap-2 mb-1">
-                  <div class="font-bold text-gray-800">${p.nickname}</div>
-                  <span class="badge bg-pink-100 text-pink-600">颜值 ${(p.faceScore||0).toFixed(1)}</span>
-                </div>
-                <div class="text-sm text-gray-500 mb-1">
-                  ${p.gender === 'female' ? '♀' : '♂'} · ${p.age}岁 · ${p.height}cm
-                </div>
-                <div class="text-xs text-gray-400">📍 ${p.hometown}</div>
-                ${p.wechat ? `<div class="text-xs text-pink-500 mt-1">📱 ${p.wechat}</div>` : ''}
-              </div>
-            </div>
-          </div>
-        `).join('')}
-      </div>
-      <div class="mt-4 text-center text-xs text-gray-400">
-        每天 0 点重置 · 换一批新推荐
-      </div>
-    </div>
-  `;
+  return `<div class="px-5 pt-6"><div class="flex items-center justify-between mb-4"><h2 class="text-lg font-bold text-gray-800">💘 今日 5 个推荐</h2><span class="text-xs text-gray-400">已推荐 ${State.seenIds.length}</span></div>
+    <div class="space-y-3">${recs.map(p=>`<div class="rec-card p-4"><div class="flex gap-3"><div class="w-20 h-24 rounded-lg overflow-hidden bg-pink-50 flex-shrink-0">${p.photos&&p.photos[0]?`<img src="${p.photos[0]}" class="w-full h-full object-cover" onerror="this.style.display='none'">`:'<div class="w-full h-full flex items-center justify-center text-pink-300 text-2xl">📷</div>'}</div><div class="flex-1 min-w-0"><div class="flex items-center gap-2 mb-1"><div class="font-bold text-gray-800">${p.nickname}</div><span class="badge bg-pink-100 text-pink-600">颜值 ${(p.faceScore||0).toFixed(1)}</span></div><div class="text-sm text-gray-500 mb-1">${p.gender==='female'?'♀':'♂'} · ${p.age}岁 · ${p.height}cm</div><div class="text-xs text-gray-400">📍 ${p.hometown}</div>${p.contact?.type?`<div class="text-xs text-pink-500 mt-1">📱 ${contactLabel(p.contact.type)}：${p.contact.account||''}</div>`:''}</div></div></div>`).join('')}</div>
+    <div class="mt-4 text-center text-xs text-gray-400">每天 0 点重置 · 换一批新推荐</div></div>`;
 }
 
+// ============== 群数据同步（普通用户） ==============
 function renderSync() {
-  return `
-    <div class="px-5 pt-6">
-      <h2 class="text-lg font-bold text-gray-800 mb-4">🔄 群数据同步</h2>
-
-      <div class="bg-white rounded-2xl p-5 shadow-sm mb-4">
-        <h3 class="font-bold text-gray-800 mb-2">📤 1. 复制我的资料</h3>
-        <p class="text-sm text-gray-500 mb-3">复制下面的内容发到相亲帮帮群，群主会帮你合并</p>
-        <button class="btn-secondary" data-act="copy-me">复制我的资料</button>
-      </div>
-
-      <div class="bg-white rounded-2xl p-5 shadow-sm mb-4">
-        <h3 class="font-bold text-gray-800 mb-2">📥 2. 导入群数据</h3>
-        <p class="text-sm text-gray-500 mb-3">把群主发的合并 JSON 粘贴到下面</p>
-        <textarea id="import-text" class="input-field" rows="4" placeholder="粘贴合并后的 JSON..."></textarea>
-        <button class="btn-primary mt-3" data-act="import-group">导入群数据</button>
-        <div class="text-xs text-gray-400 mt-2">
-          当前已导入 ${State.groupData.length} 位
-        </div>
-      </div>
-
-      <div class="bg-white rounded-2xl p-5 shadow-sm mb-4">
-        <h3 class="font-bold text-gray-800 mb-2">👑 群主专用</h3>
-        <p class="text-sm text-gray-500 mb-3">合并群友资料后发到群文件</p>
-        <button class="btn-ghost w-full" data-act="toggle-leader">进入群主模式 →</button>
-      </div>
-
-      <div class="bg-yellow-50 border border-yellow-200 rounded-2xl p-4 mb-4">
-        <div class="text-sm text-yellow-800">
-          💡 <b>提示</b>：颜值分、择偶要求都在本地浏览器存储，换手机/清缓存会丢。
-          建议每月导出一次备份。
-        </div>
-      </div>
-    </div>
-  `;
+  return `<div class="px-5 pt-6">
+    <h2 class="text-lg font-bold text-gray-800 mb-4">🔄 群数据同步</h2>
+    <div class="bg-white rounded-2xl p-5 shadow-sm mb-4"><h3 class="font-bold text-gray-800 mb-2">📤 1. 复制我的资料</h3><p class="text-sm text-gray-500 mb-3">复制下面的内容发到相亲帮帮群，群主会帮你合并</p><button class="btn-secondary" data-act="copy-me">复制我的资料</button></div>
+    <div class="bg-white rounded-2xl p-5 shadow-sm mb-4"><h3 class="font-bold text-gray-800 mb-2">📥 2. 导入群数据</h3><p class="text-sm text-gray-500 mb-3">把群主发的合并 JSON 粘贴到下面</p><textarea id="import-text" class="input-field" rows="4" placeholder="粘贴合并后的 JSON..."></textarea><button class="btn-primary mt-3" data-act="import-group">导入群数据</button><div class="text-xs text-gray-400 mt-2">当前已导入 ${State.groupData.length} 位</div></div>
+    <div class="bg-yellow-50 border border-yellow-200 rounded-2xl p-4"><div class="text-sm text-yellow-800">💡 <b>提示</b>：群数据由群主统一管理，普通成员只能查看匹配结果，看不到其他人的完整资料。</div></div>
+  </div>`;
 }
 
+// ============== 我的（设置） ==============
 function renderSettings() {
-  return `
-    <div class="px-5 pt-6">
-      <h2 class="text-lg font-bold text-gray-800 mb-4">⚙️ 我的</h2>
-
-      <div class="bg-white rounded-2xl p-5 shadow-sm mb-4">
-        <h3 class="font-bold text-gray-800 mb-3">📦 数据备份</h3>
-        <div class="space-y-2">
-          <button class="btn-secondary" data-act="copy-me">📤 导出我的资料（粘贴给群主合并）</button>
-          <button class="btn-ghost w-full" data-act="export-all">📦 导出群全部数据</button>
-        </div>
-      </div>
-
-      <div class="bg-white rounded-2xl p-5 shadow-sm mb-4">
-        <h3 class="font-bold text-gray-800 mb-3">📋 我的颜值分</h3>
-        <div class="text-center py-4">
-          <div class="text-4xl font-bold text-pink-500">${State.profile ? State.profile.faceScore.toFixed(1) : '-'}</div>
-          <div class="text-sm text-gray-500 mt-1">满分 10 分</div>
-        </div>
-        <button class="btn-ghost w-full" data-act="go-quiz">重新测评</button>
-      </div>
-
-      <div class="bg-white rounded-2xl p-5 shadow-sm mb-4">
-        <h3 class="font-bold text-gray-800 mb-3">📝 资料编辑</h3>
-        <button class="btn-secondary" data-act="go-form">编辑我的资料</button>
-      </div>
-
-      <div class="bg-red-50 border border-red-200 rounded-2xl p-4 mb-4">
-        <h3 class="font-bold text-red-800 mb-2">⚠️ 危险操作</h3>
-        <button class="btn-ghost w-full" style="border-color:#ef4444;color:#ef4444" data-act="reset-all">清空所有数据（不可恢复）</button>
-      </div>
-
-      <div class="text-center text-xs text-gray-400 mt-6">
-        杭州相亲帮帮 v1.0 · 零服务器版<br>
-        数据全部存本地浏览器
-      </div>
-    </div>
-  `;
+  const p = State.profile;
+  const remain = 3 - (p?.faceScoreCount || 0);
+  return `<div class="px-5 pt-6">
+    <h2 class="text-lg font-bold text-gray-800 mb-4">⚙️ 我的</h2>
+    <div class="bg-white rounded-2xl p-5 shadow-sm mb-4"><h3 class="font-bold text-gray-800 mb-3">📋 我的颜值分</h3><div class="text-center py-4"><div class="text-4xl font-bold text-pink-500">${p&&p.faceScore?p.faceScore.toFixed(1):'-'}</div><div class="text-sm text-gray-500 mt-1">满分 10 分 · 剩余重评 ${remain>0?remain:0} 次</div></div>${p?`<button class="btn-ghost w-full" data-act="re-score" ${remain<=0?'disabled':''}>${remain<=0?'重评次数已用完':'重新评测 ('+remain+' 次剩余)'}</button>`:''}</div>
+    <div class="bg-white rounded-2xl p-5 shadow-sm mb-4"><h3 class="font-bold text-gray-800 mb-3">📝 资料编辑</h3><button class="btn-secondary" data-act="go-form">编辑我的资料</button></div>
+    <div class="bg-white rounded-2xl p-5 shadow-sm mb-4"><h3 class="font-bold text-gray-800 mb-3">📦 我的数据</h3><button class="btn-ghost w-full" data-act="copy-me">导出我的资料（发给群主合并）</button></div>
+    <div class="text-center mt-6"><button class="text-xs text-gray-300 underline" data-act="leader-entry">群主管理入口</button><div class="text-xs text-gray-400 mt-6">杭州相亲帮帮 v2.0 · 数据存本地</div></div>
+  </div>`;
 }
 
 // ============== 群主模式 ==============
 function renderLeader() {
-  return `
-    <div class="px-5 pt-6">
-      <div class="flex items-center justify-between mb-4">
-        <h2 class="text-lg font-bold text-gray-800">👑 群主模式</h2>
-        <button class="text-sm text-pink-500" data-act="toggle-leader">退出</button>
-      </div>
-
-      <div class="bg-white rounded-2xl p-5 shadow-sm mb-4">
-        <h3 class="font-bold text-gray-800 mb-2">1️⃣ 粘贴群友的资料 JSON</h3>
-        <p class="text-sm text-gray-500 mb-3">在群里依次复制每个群友发的资料，粘贴到下面（可多次粘贴）</p>
-        <textarea id="leader-input" class="input-field" rows="4" placeholder='粘贴 JSON，例如：[{"id":"p_xxx","nickname":"小美",...}]'></textarea>
-        <button class="btn-primary mt-3" data-act="leader-merge">合并到群数据</button>
-      </div>
-
-      <div class="bg-white rounded-2xl p-5 shadow-sm mb-4">
-        <h3 class="font-bold text-gray-800 mb-2">2️⃣ 导出全群合并数据</h3>
-        <p class="text-sm text-gray-500 mb-3">把合并后的 JSON 发到群里，所有人导入即可</p>
-        <button class="btn-secondary" data-act="leader-export">📦 复制全群 JSON</button>
-        <div class="text-xs text-gray-400 mt-2">
-          当前群数据：${State.groupData.length} 位
-        </div>
-      </div>
-
-      <div class="bg-white rounded-2xl p-5 shadow-sm mb-4">
-        <h3 class="font-bold text-gray-800 mb-2">3️⃣ 管理</h3>
-        <button class="btn-ghost w-full mb-2" data-act="leader-list">查看所有人资料</button>
-        <button class="btn-ghost w-full" style="border-color:#ef4444;color:#ef4444" data-act="leader-clear">清空群数据</button>
-      </div>
-
-      <div class="bg-blue-50 border border-blue-200 rounded-2xl p-4">
-        <div class="text-sm text-blue-800">
-          💡 <b>群主小贴士</b>：<br>
-          · 每天固定时间合并一次（如 22:00）<br>
-          · 合并后的 JSON 发到「群文件」方便大家下载<br>
-          · 脱单的人及时删除，保持池子活跃
-        </div>
-      </div>
-    </div>
-  `;
+  const keyConfigured = State.baiduApiKey && State.baiduSecretKey;
+  return `<div class="px-5 pt-6">
+    <div class="flex items-center justify-between mb-4"><h2 class="text-lg font-bold text-gray-800">👑 群主模式</h2><button class="text-sm text-pink-500" data-act="toggle-leader">退出</button></div>
+    <div class="bg-white rounded-2xl p-5 shadow-sm mb-4"><h3 class="font-bold text-gray-800 mb-2">1️⃣ 合并群友资料</h3><p class="text-sm text-gray-500 mb-3">粘贴群友发的 JSON（可多次粘贴）</p><textarea id="leader-input" class="input-field" rows="4" placeholder='粘贴 JSON，例如：[{"id":"p_xxx","nickname":"小美",...}]'></textarea><button class="btn-primary mt-3" data-act="leader-merge">合并到群数据</button></div>
+    <div class="bg-white rounded-2xl p-5 shadow-sm mb-4"><h3 class="font-bold text-gray-800 mb-2">2️⃣ 导出全群数据</h3><p class="text-sm text-gray-500 mb-3">把合并后的 JSON 发到群里，所有人导入即可</p><button class="btn-secondary" data-act="leader-export">📦 复制全群 JSON</button><div class="text-xs text-gray-400 mt-2">当前群数据：${State.groupData.length} 位</div></div>
+    <div class="bg-white rounded-2xl p-5 shadow-sm mb-4"><h3 class="font-bold text-gray-800 mb-2">3️⃣ AI 打分接口配置</h3><p class="text-sm text-gray-500 mb-3">配置百度 AI 人脸检测的 key，成员才能系统打分</p><input class="input-field mb-2" id="l-baidu-key" placeholder="API Key" value="${State.baiduApiKey||''}"><input class="input-field mb-3" id="l-baidu-secret" placeholder="Secret Key" value="${State.baiduSecretKey||''}"><button class="btn-secondary" data-act="leader-save-baidu">保存 AI 配置</button><div class="text-xs mt-2 ${keyConfigured?'text-green-600':'text-gray-400'}">${keyConfigured?'✅ 已配置':'⚠️ 未配置，成员暂时无法系统打分'}</div></div>
+    <div class="bg-white rounded-2xl p-5 shadow-sm mb-4"><h3 class="font-bold text-gray-800 mb-2">4️⃣ 管理</h3><button class="btn-ghost w-full mb-2" data-act="leader-list">查看所有人资料</button><button class="btn-ghost w-full" style="border-color:#ef4444;color:#ef4444" data-act="leader-clear">清空群数据</button></div>
+    <div class="bg-blue-50 border border-blue-200 rounded-2xl p-4"><div class="text-sm text-blue-800">💡 <b>群主小贴士</b>：每天固定时间合并一次（如 22:00）；合并后的 JSON 发到群文件；脱单的人及时删除。</div></div>
+  </div>`;
 }
 
 // ============== 事件绑定 ==============
 function bindScreen() {
-  // Tab bar
   document.querySelectorAll('[data-screen]').forEach(el => {
-    el.onclick = () => {
-      State.screen = el.dataset.screen;
-      render();
-    };
+    el.onclick = () => { State.screen = el.dataset.screen; render(); };
   });
-  // 用赋值避免重复绑定
   document.body.onclick = onClick;
 }
-
 function onClick(e) {
   const t = e.target.closest('[data-act]');
-  if (!t) { bindScreen(); return; }
+  if(!t) return;
   const act = t.dataset.act;
-  switch (act) {
-    case 'go-home':      State.screen = 'home'; break;
-    case 'go-form':      State.screen = 'form'; break;
-    case 'go-quiz':      State.quizIndex = 0; State.quizAnswers = State.profile ? State.profile.faceAnswers || [] : []; State.screen = 'quiz'; break;
-    case 'go-recommend': State.screen = 'recommend'; break;
-    case 'goto-sync':    State.screen = 'sync'; break;
-    case 'goto-settings':State.screen = 'settings'; break;
-    case 'back':         State.screen = State.profile ? 'home' : 'home'; break;
-    case 'quiz-back':    if (State.quizIndex > 0) State.quizIndex--; else State.screen = 'form'; break;
-    case 'form-next':    collectForm(); if (State.profile) { State.quizIndex = 0; State.quizAnswers = []; State.screen = 'quiz'; } break;
-    case 'quiz-next':    onQuizNext(); break;
-    case 'copy-me':      copyMyProfile(); break;
-    case 'import-group': importGroupData(); break;
-    case 'export-all':   exportAllData(); break;
-    case 'reset-all':    if (confirm('确定清空所有数据？此操作不可恢复。')) { localStorage.clear(); location.reload(); } break;
-    case 'toggle-leader':State.isLeader = !State.isLeader; break;
+  switch(act) {
+    case 'go-home': State.screen='home'; break;
+    case 'go-form': State.tempPhotos = State.profile?.photos ? [...State.profile.photos] : []; State.screen='form'; break;
+    case 'go-recommend': State.screen='recommend'; break;
+    case 'goto-sync': State.screen='sync'; break;
+    case 'goto-settings': State.screen='settings'; break;
+    case 'back': State.screen='home'; break;
+    case 'form-next': collectForm(); return;
+    case 'quiz-start': startFaceScore(); return;
+    case 'copy-me': copyMyProfile(); break;
+    case 'import-group': importGroupData(); return;
+    case 're-score': startReScore(); return;
+    case 'leader-entry': openLeaderAuth(); return;
   }
   render();
 }
 
+// ============== 表单收集 ==============
 function collectForm() {
   const nickname = document.getElementById('f-nickname').value.trim();
-  if (!nickname) { showToast('请填写昵称'); return; }
-  const wechat = document.getElementById('f-wechat').value.trim();
+  if(!nickname) { showToast('请填写昵称'); return; }
   const age = parseInt(document.getElementById('f-age').value);
   const height = parseInt(document.getElementById('f-height').value);
   const hometown = document.getElementById('f-hometown').value;
-  const gender = (document.querySelector('[data-radio="gender"].selected') || {}).dataset?.val || 'female';
-  const rGender = (document.querySelector('[data-radio="r-gender"].selected') || {}).dataset?.val || 'male';
+  const gender = (document.querySelector('[data-radio="gender"].selected')||{}).dataset?.val || 'female';
+  const ct = (document.querySelector('[data-radio="contact"].selected')||{}).dataset?.val || 'douyin';
+  const contactAccount = document.getElementById('f-contact-account').value.trim();
+  const rGender = (document.querySelector('[data-radio="r-gender"].selected')||{}).dataset?.val || 'male';
   const ageMin = parseInt(document.getElementById('r-ageMin').value);
   const ageMax = parseInt(document.getElementById('r-ageMax').value);
   const hMin = parseInt(document.getElementById('r-hMin').value);
   const hMax = parseInt(document.getElementById('r-hMax').value);
   const faceMin = parseFloat(document.getElementById('r-faceMin').value);
-  const hometowns = [...document.querySelectorAll('[data-toggle-ht].selected')].map(el => el.dataset.toggleHt);
+  const hometowns = [...document.querySelectorAll('[data-toggle-ht].selected')].map(el=>el.dataset.toggleHt);
+  const photos = State.tempPhotos.length ? [...State.tempPhotos] : (State.profile?.photos || []);
 
-  // 照片
-  const photos = State.profile?.photos || ['', '', ''];
+  if(!photos.length) { showToast('请至少上传一张照片用于打分'); return; }
 
   State.profile = {
     id: State.profile?.id || uid(),
-    nickname, wechat, gender, age, height, hometown,
+    nickname, gender, age, height, hometown,
+    contact: { type: ct, account: contactAccount },
     photos,
-    requirement: { gender: rGender, ageMin, ageMax, heightMin: hMin, heightMax: hMax, hometowns, faceScoreMin: faceMin },
     faceScore: State.profile?.faceScore || 0,
-    faceAnswers: State.profile?.faceAnswers || [],
+    faceScoreCount: State.profile?.faceScoreCount || 0,
+    requirement: { gender: rGender, ageMin, ageMax, heightMin: hMin, heightMax: hMax, hometowns, faceScoreMin: faceMin },
     filledAt: State.profile?.filledAt || new Date().toISOString()
   };
   saveProfile();
-  // 同步到群数据
   syncProfileToGroup();
+  State.screen = 'quiz';
+  render();
 }
 
-function onQuizNext() {
-  const i = State.quizIndex;
-  const optIdx = [...document.querySelectorAll('[data-quiz-opt]')].findIndex(el => el.classList.contains('selected'));
-  if (optIdx < 0) { showToast('请选择一个选项'); return; }
-  State.quizAnswers[i] = FACE_QUESTIONS[i].options[optIdx].score;
-  if (i < FACE_QUESTIONS.length - 1) {
-    State.quizIndex++;
-  } else {
-    // 完成
-    State.profile.faceAnswers = State.quizAnswers;
-    State.profile.faceScore = calcFaceScore(State.quizAnswers);
+// ============== AI 打分 ==============
+async function startFaceScore() {
+  const photos = State.tempPhotos.length ? State.tempPhotos : (State.profile?.photos || []);
+  if(!photos[0]) { showToast('请先上传照片'); return; }
+  const btn = document.getElementById('quiz-start');
+  if(btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> 打分中...'; }
+  try {
+    const result = await detectFace(photos[0]);
+    const score = Math.round(result.beauty / 10 * 10) / 10;  // 0-100 → 0-10
+    State.profile.faceScore = score;
+    State.profile.faceAge = result.age;
+    State.profile.faceGender = result.gender;
+    State.profile.faceScoreCount = (State.profile.faceScoreCount || 0) + 1;
     saveProfile();
     syncProfileToGroup();
+    const el = document.getElementById('quiz-result');
+    if(el) el.innerHTML = `<div class="text-center py-4"><div class="text-4xl font-bold text-pink-500">${score.toFixed(1)}</div><div class="text-sm text-gray-500 mt-1">AI 评分（原始 ${result.beauty} 分）</div></div>`;
     State.screen = 'result';
+    render();
+  } catch(err) {
+    if(err.message === 'NO_KEY') {
+      showToast('AI 打分接口未配置，请联系群主');
+      const el = document.getElementById('quiz-result');
+      if(el) el.innerHTML = '<p class="text-sm text-red-500">系统打分接口未配置，请联系群主开通</p>';
+    } else {
+      showToast('打分失败：' + err.message);
+    }
+    if(btn) { btn.disabled = false; btn.textContent = '🤖 开始系统打分'; }
   }
 }
 
-function copyMyProfile() {
-  if (!State.profile) { showToast('请先填写资料'); return; }
-  const data = JSON.stringify([State.profile], null, 2);
-  copyToClipboard(data);
+async function startReScore() {
+  const remain = 3 - (State.profile?.faceScoreCount || 0);
+  if(remain <= 0) { showToast('重评次数已用完'); return; }
+  const photos = State.profile?.photos || [];
+  if(!photos[0]) { showToast('请先在资料里上传照片'); return; }
+  if(!confirm(`确定重新评测？剩余 ${remain} 次机会。`)) return;
+  showToast('重新评测中...');
+  try {
+    const result = await detectFace(photos[0]);
+    const score = Math.round(result.beauty / 10 * 10) / 10;
+    State.profile.faceScore = score;
+    State.profile.faceAge = result.age;
+    State.profile.faceGender = result.gender;
+    State.profile.faceScoreCount = (State.profile.faceScoreCount || 0) + 1;
+    saveProfile();
+    syncProfileToGroup();
+    showToast('✅ 新分数：' + score.toFixed(1));
+    render();
+  } catch(err) {
+    showToast(err.message === 'NO_KEY' ? 'AI 接口未配置，请联系群主' : '打分失败：' + err.message);
+  }
 }
 
+// ============== 复制/导入 ==============
+function copyMyProfile() {
+  if(!State.profile) { showToast('请先填写资料'); return; }
+  copyToClipboard(JSON.stringify([State.profile], null, 2));
+}
 function syncProfileToGroup() {
-  if (!State.profile) return;
-  const idx = State.groupData.findIndex(p => p.id === State.profile.id);
-  if (idx >= 0) State.groupData[idx] = State.profile;
-  else State.groupData.push(State.profile);
+  if(!State.profile) return;
+  const idx = State.groupData.findIndex(p=>p.id===State.profile.id);
+  if(idx>=0) State.groupData[idx] = State.profile; else State.groupData.push(State.profile);
   saveGroupData();
 }
-
 function importGroupData() {
   const text = document.getElementById('import-text').value.trim();
-  if (!text) { showToast('请先粘贴 JSON'); return; }
+  if(!text) { showToast('请先粘贴 JSON'); return; }
   try {
-    let arr;
-    // 支持纯 JSON 或带 "复制我的资料" 周围文本的截取
     const m = text.match(/\[\s*\{[\s\S]*?\}\s*\]/);
     const json = m ? m[0] : text;
-    arr = JSON.parse(json);
-    if (!Array.isArray(arr)) throw new Error('不是数组');
-    let added = 0, updated = 0;
+    const arr = JSON.parse(json);
+    if(!Array.isArray(arr)) throw new Error('不是数组');
+    let added=0, updated=0;
     arr.forEach(p => {
-      if (!p.id) p.id = uid();
-      const i = State.groupData.findIndex(x => x.id === p.id);
-      if (i >= 0) { State.groupData[i] = p; updated++; }
-      else { State.groupData.push(p); added++; }
+      if(!p.id) p.id = uid();
+      const i = State.groupData.findIndex(x=>x.id===p.id);
+      if(i>=0){ State.groupData[i]=p; updated++; } else { State.groupData.push(p); added++; }
     });
     saveGroupData();
     showToast(`✅ 导入成功 · 新增 ${added}，更新 ${updated}`);
-    document.getElementById('import-text').value = '';
-  } catch(e) {
-    showToast('❌ JSON 格式不对：' + e.message);
-  }
+    document.getElementById('import-text').value='';
+  } catch(e) { showToast('❌ JSON 格式不对'); }
 }
 
-function exportAllData() {
-  copyToClipboard(JSON.stringify(State.groupData, null, 2));
+// ============== 群主认证 ==============
+function openLeaderAuth() {
+  const firstTime = !State.groupPassword;
+  showModal(firstTime ? '首次设置群主密码' : '输入群主密码', firstTime
+    ? `<input class="input-field mb-2" id="pw1" type="password" placeholder="设置密码（至少4位）"><input class="input-field mb-3" id="pw2" type="password" placeholder="再次输入确认">`
+    : `<input class="input-field mb-3" id="pw1" type="password" placeholder="输入密码">`,
+    firstTime ? '设置并进入' : '进入群主模式',
+    () => {
+      const pw1 = document.getElementById('pw1').value;
+      if(firstTime) {
+        const pw2 = document.getElementById('pw2').value;
+        if(pw1.length < 4) { showToast('密码至少4位'); return; }
+        if(pw1 !== pw2) { showToast('两次输入不一致'); return; }
+        State.groupPassword = pw1;
+        localStorage.setItem(LS_KEYS.password, pw1);
+        enterLeader();
+      } else {
+        if(pw1 === State.groupPassword) enterLeader();
+        else showToast('密码错误');
+      }
+    });
+}
+function enterLeader() {
+  State.isLeader = true;
+  render();
+}
+function showModal(title, bodyHtml, okText, onOk) {
+  const m = document.createElement('div');
+  m.className = 'modal-mask';
+  m.innerHTML = `<div class="modal-box"><h3 class="font-bold text-gray-800 mb-4">${title}</h3>${bodyHtml}<div class="flex gap-2 mt-2"><button class="btn-ghost" data-modal="cancel">取消</button><button class="btn-primary" data-modal="ok">${okText}</button></div></div>`;
+  document.body.appendChild(m);
+  m.querySelector('[data-modal="cancel"]').onclick = () => m.remove();
+  m.querySelector('[data-modal="ok"]').onclick = () => { onOk(); m.remove(); };
 }
 
-// ============== 群主模式事件 ==============
+// ============== 群主事件 ==============
 function bindLeader() {
   document.body.onclick = onLeaderClick;
 }
-
 function onLeaderClick(e) {
   const t = e.target.closest('[data-act]');
-  if (!t) { bindLeader(); return; }
+  if(!t) return;
   const act = t.dataset.act;
-  if (act === 'leader-merge') {
+  if(act === 'leader-merge') {
     const text = document.getElementById('leader-input').value.trim();
-    if (!text) { showToast('请先粘贴 JSON'); bindLeader(); return; }
+    if(!text) { showToast('请先粘贴 JSON'); return; }
     try {
       const m = text.match(/\[\s*\{[\s\S]*?\}\s*\]/);
-      const json = m ? m[0] : text;
-      const arr = JSON.parse(json);
-      let added = 0, updated = 0;
+      const arr = JSON.parse(m ? m[0] : text);
+      let added=0, updated=0;
       arr.forEach(p => {
-        if (!p.id) p.id = uid();
-        const i = State.groupData.findIndex(x => x.id === p.id);
-        if (i >= 0) { State.groupData[i] = p; updated++; }
-        else { State.groupData.push(p); added++; }
+        if(!p.id) p.id = uid();
+        const i = State.groupData.findIndex(x=>x.id===p.id);
+        if(i>=0){ State.groupData[i]=p; updated++; } else { State.groupData.push(p); added++; }
       });
       saveGroupData();
-      document.getElementById('leader-input').value = '';
+      document.getElementById('leader-input').value='';
       showToast(`✅ 合并成功 · 新增 ${added}，更新 ${updated}`);
-    } catch(e) {
-      showToast('❌ JSON 格式不对');
-    }
-  } else if (act === 'leader-export') {
+    } catch(err) { showToast('❌ JSON 格式不对'); }
+  } else if(act === 'leader-export') {
     copyToClipboard(JSON.stringify(State.groupData, null, 2));
-  } else if (act === 'leader-clear') {
-    if (confirm('确定清空群数据？')) {
-      State.groupData = [];
-      saveGroupData();
-      showToast('已清空');
-    }
-  } else if (act === 'leader-list') {
-    const list = State.groupData.map(p => `${p.nickname} | ${p.gender==='female'?'女':'男'} | ${p.age}岁 | ${p.height}cm | ${p.hometown} | 颜值${(p.faceScore||0).toFixed(1)}`).join('\n');
+  } else if(act === 'leader-save-baidu') {
+    const k = document.getElementById('l-baidu-key').value.trim();
+    const s = document.getElementById('l-baidu-secret').value.trim();
+    State.baiduApiKey = k; State.baiduSecretKey = s;
+    localStorage.setItem(LS_KEYS.baiduKey, k);
+    localStorage.setItem(LS_KEYS.baiduSecret, s);
+    showToast('✅ AI 配置已保存');
+  } else if(act === 'leader-clear') {
+    if(confirm('确定清空群数据？此操作不可恢复。')) { State.groupData=[]; saveGroupData(); showToast('已清空'); }
+  } else if(act === 'leader-list') {
+    const list = State.groupData.map(p=>`${p.nickname} | ${p.gender==='female'?'女':'男'} | ${p.age}岁 | ${p.height}cm | ${p.hometown} | 颜值${(p.faceScore||0).toFixed(1)}`).join('\n');
     alert(`群内 ${State.groupData.length} 人：\n\n${list}`);
-  } else if (act === 'toggle-leader') {
+  } else if(act === 'toggle-leader') {
     State.isLeader = false;
   }
   render();
 }
 
-// ============== 内部事件代理（表单交互） ==============
+// ============== 内部交互代理 ==============
+let pendingPhotoIndex = -1;
 document.addEventListener('click', function(e) {
-  // radio 单选
   const radio = e.target.closest('[data-radio]');
-  if (radio) {
-    document.querySelectorAll(`[data-radio="${radio.dataset.radio}"]`).forEach(el => el.classList.remove('selected'));
+  if(radio) {
+    document.querySelectorAll(`[data-radio="${radio.dataset.radio}"]`).forEach(el=>el.classList.remove('selected'));
     radio.classList.add('selected');
+    if(radio.dataset.radio === 'contact') State.tempContactType = radio.dataset.val;
     return;
   }
-  // 老家多选
   const ht = e.target.closest('[data-toggle-ht]');
-  if (ht) {
-    ht.classList.toggle('selected');
-    return;
-  }
-  // 颜值题选项
-  const qo = e.target.closest('[data-quiz-opt]');
-  if (qo) {
-    document.querySelectorAll('[data-quiz-opt]').forEach(el => el.classList.remove('selected'));
-    qo.classList.add('selected');
-    // 启用按钮
-    const btn = document.querySelector('[data-act="quiz-next"]');
-    if (btn) btn.disabled = false;
-    return;
-  }
-  // 照片格子
+  if(ht) { ht.classList.toggle('selected'); return; }
   const ph = e.target.closest('[data-photo]');
-  if (ph) {
-    const i = parseInt(ph.dataset.photo);
-    const url = prompt('粘贴图片链接（小红书/网盘/微信相册公开直链）', (State.profile?.photos||[])[i] || '');
-    if (url !== null) {
-      if (!State.profile) State.profile = { id: uid(), requirement: {} };
-      if (!State.profile.photos) State.profile.photos = ['','',''];
-      State.profile.photos[i] = url;
-      saveProfile();
-      render();
-    }
-    return;
-  }
-  // 照片删除
+  if(ph) { pendingPhotoIndex = parseInt(ph.dataset.photo); document.getElementById('photo-input').click(); return; }
   const rm = e.target.closest('[data-rm-photo]');
-  if (rm) {
+  if(rm) {
     e.stopPropagation();
     const i = parseInt(rm.dataset.rmPhoto);
-    if (State.profile?.photos) {
-      State.profile.photos[i] = '';
-      saveProfile();
-      render();
-    }
+    if(!State.tempPhotos.length) State.tempPhotos = [...(State.profile?.photos||[]), '', ''].slice(0,3);
+    State.tempPhotos[i] = '';
+    const slot = document.querySelector(`[data-photo="${i}"]`);
+    if(slot) slot.innerHTML = '<span>+</span>';
     return;
   }
+});
+document.getElementById('photo-input').addEventListener('change', function(e) {
+  const file = e.target.files[0];
+  if(!file) return;
+  compressImage(file, (dataUrl) => {
+    if(!State.tempPhotos.length) State.tempPhotos = [...(State.profile?.photos||[]), '', ''].slice(0,3);
+    while(State.tempPhotos.length < 3) State.tempPhotos.push('');
+    State.tempPhotos[pendingPhotoIndex] = dataUrl;
+    // 只更新照片格子，不重渲染整个表单（避免丢失已填输入）
+    const slot = document.querySelector(`[data-photo="${pendingPhotoIndex}"]`);
+    if(slot) slot.innerHTML = `<img src="${dataUrl}"><div class="remove" data-rm-photo="${pendingPhotoIndex}">×</div>`;
+  });
+  e.target.value = '';
 });
 
 // ============== 启动 ==============
