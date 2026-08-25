@@ -132,18 +132,11 @@ function compressImage(file, callback) {
 }
 
 // ============== AI 颜值打分（百度 AI） ==============
-async function getBaiduToken() {
-  const key=State.baiduApiKey, secret=State.baiduSecretKey;
-  if(!key || !secret) throw new Error('NO_KEY');
-  const url = `https://aip.baidubce.com/oauth/2.0/token?grant_type=client_credentials&client_id=${encodeURIComponent(key)}&client_secret=${encodeURIComponent(secret)}`;
-  const res = await fetch(url, { method:'POST' });
-  const data = await res.json();
-  if(data.access_token) return data.access_token;
-  throw new Error(data.error_description || 'token获取失败');
-}
+// 预生成的 access_token（30天有效，过期后需重新生成并更新此值）
+const BAIDU_ACCESS_TOKEN = '24.5e3062574fe112d730b60a4049bbaaf4.2592000.1790241210.282335-124194849';
+
 async function detectFace(base64DataUrl) {
-  const token = await getBaiduToken();
-  const url = `https://aip.baidubce.com/rest/2.0/face/v3/detect?access_token=${token}`;
+  const url = `https://aip.baidubce.com/rest/2.0/face/v3/detect?access_token=${BAIDU_ACCESS_TOKEN}`;
   const pure = base64DataUrl.replace(/^data:image\/\w+;base64,/, '');
   for (let attempt = 0; attempt < 3; attempt++) {
     const res = await fetch(url, {
@@ -159,6 +152,9 @@ async function detectFace(base64DataUrl) {
     if (data.error_code === 18) { // QPS 超限，等待后重试
       await new Promise(r => setTimeout(r, 1500));
       continue;
+    }
+    if (data.error_code === 110 || data.error_code === 111) { // token 失效
+      throw new Error('AI 服务凭证已过期，请联系群主更新');
     }
     throw new Error(data.error_msg || '未检测到清晰人脸');
   }
