@@ -243,9 +243,9 @@ function renderTabBar() {
 function renderHome() {
   if(!State.profile) {
     return `<div class="px-5 pt-12">
-      <div class="text-center mb-8"><div class="text-5xl mb-3">💖</div><h1 class="text-2xl font-bold text-gray-800">杭州相亲帮帮</h1><p class="text-sm text-gray-500 mt-2">上传照片 · AI 颜值打分 · 每日匹配</p></div>
-      <div class="bg-white rounded-2xl p-5 shadow-sm mb-4"><h3 class="font-bold text-gray-800 mb-3">📌 这是什么？</h3><p class="text-sm text-gray-600 leading-relaxed">群主在「相亲帮帮群」收集资料，AI 给颜值客观打分，每天给你推荐 5 个符合条件的群友。</p></div>
-      <div class="bg-white rounded-2xl p-5 shadow-sm mb-6"><h3 class="font-bold text-gray-800 mb-3">✨ 怎么用？</h3><ol class="text-sm text-gray-600 leading-relaxed space-y-2"><li>1️⃣ 填资料 + 上传照片</li><li>2️⃣ AI 系统打分（客观颜值分）</li><li>3️⃣ 复制资料发到群里</li><li>4️⃣ 导入群数据，看每日推荐</li></ol></div>
+      <div class="text-center mb-8"><div class="text-5xl mb-3">💖</div><h1 class="text-2xl font-bold text-gray-800">杭州相亲帮帮</h1><p class="text-sm text-gray-500 mt-2">上传照片 · AI 颜值打分 · 每日匹配</p><div class="inline-block mt-2 text-xs text-pink-500 bg-pink-50 px-2 py-0.5 rounded-full">v3.0 · 自动同步版</div></div>
+      <div class="bg-white rounded-2xl p-5 shadow-sm mb-4"><h3 class="font-bold text-gray-800 mb-3">📌 这是什么？</h3><p class="text-sm text-gray-600 leading-relaxed">群里填资料自动同步，AI 给颜值客观打分，每天推荐 5 个符合条件的群友。</p></div>
+      <div class="bg-white rounded-2xl p-5 shadow-sm mb-6"><h3 class="font-bold text-gray-800 mb-3">✨ 怎么用？</h3><ol class="text-sm text-gray-600 leading-relaxed space-y-2"><li>1️⃣ 填资料 + 上传 1 张照片</li><li>2️⃣ AI 系统打分（客观颜值分）</li><li>3️⃣ 自动同步云端，无需手动操作</li><li>4️⃣ 每天看 5 个推荐</li></ol></div>
       <button class="btn-primary" data-act="go-form">开始填写资料 →</button>
     </div>`;
   }
@@ -564,6 +564,11 @@ async function uploadUsers(users) {
 async function uploadMyProfile() {
   if (!State.profile) return false;
   try {
+    // 上传前裁剪照片：只保留第1张，避免旧版多张照片占满云端空间
+    const profileToUpload = Object.assign({}, State.profile);
+    if (Array.isArray(profileToUpload.photos) && profileToUpload.photos.length > 1) {
+      profileToUpload.photos = [profileToUpload.photos[0]];
+    }
     // 读最新 → 合并自己 → 写回（避免覆盖他人数据）
     const res = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`, {
       headers: { 'X-Master-Key': JSONBIN_MASTER_KEY }
@@ -571,8 +576,8 @@ async function uploadMyProfile() {
     const data = await res.json();
     let users = (data.record && data.record.users) || [];
     if (!Array.isArray(users)) users = [];
-    const idx = users.findIndex(p => p.id === State.profile.id);
-    if (idx >= 0) users[idx] = State.profile; else users.push(State.profile);
+    const idx = users.findIndex(p => p.id === profileToUpload.id);
+    if (idx >= 0) users[idx] = profileToUpload; else users.push(profileToUpload);
     State.groupData = users;
     saveGroupData();
     return await uploadUsers(users);
