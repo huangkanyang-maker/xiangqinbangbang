@@ -76,8 +76,8 @@ function loadState() {
     State.groupData = JSON.parse(localStorage.getItem(LS_KEYS.groupData) || '[]');
     State.seenIds = JSON.parse(localStorage.getItem(LS_KEYS.seenIds) || '[]');
     State.groupPassword = localStorage.getItem(LS_KEYS.password) || null;
-    State.baiduApiKey = localStorage.getItem(LS_KEYS.baiduKey) || null;
-    State.baiduSecretKey = localStorage.getItem(LS_KEYS.baiduSecret) || null;
+    State.baiduApiKey = localStorage.getItem(LS_KEYS.baiduKey) || 'Za16WJNHqXZYpbHq4hwxAY6R';
+    State.baiduSecretKey = localStorage.getItem(LS_KEYS.baiduSecret) || 'qOrmHSwWPT5WYt9xuCtFsOkiPlH37rLK';
   } catch(e) { console.error(e); }
   resetSeenIfNewDay();
 }
@@ -145,17 +145,24 @@ async function detectFace(base64DataUrl) {
   const token = await getBaiduToken();
   const url = `https://aip.baidubce.com/rest/2.0/face/v3/detect?access_token=${token}`;
   const pure = base64DataUrl.replace(/^data:image\/\w+;base64,/, '');
-  const res = await fetch(url, {
-    method:'POST',
-    headers:{ 'Content-Type':'application/json' },
-    body: JSON.stringify({ image:pure, image_type:'BASE64', face_field:'beauty,age,gender' })
-  });
-  const data = await res.json();
-  if(data.error_code===0 && data.result && data.result.face_num>0) {
-    const face = data.result.face_list[0];
-    return { beauty:face.beauty, age:face.age, gender:face.gender?face.gender.type:null };
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ image: pure, image_type: 'BASE64', face_field: 'beauty,age,gender' })
+    });
+    const data = await res.json();
+    if (data.error_code === 0 && data.result && data.result.face_num > 0) {
+      const face = data.result.face_list[0];
+      return { beauty: face.beauty, age: face.age, gender: face.gender ? face.gender.type : null };
+    }
+    if (data.error_code === 18) { // QPS 超限，等待后重试
+      await new Promise(r => setTimeout(r, 1500));
+      continue;
+    }
+    throw new Error(data.error_msg || '未检测到清晰人脸');
   }
-  throw new Error(data.error_msg || '未检测到清晰人脸');
+  throw new Error('请求过于频繁，请稍后再试');
 }
 
 // ============== 匹配 ==============
