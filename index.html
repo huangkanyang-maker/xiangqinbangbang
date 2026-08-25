@@ -137,20 +137,20 @@ function showManualCopy(text) {
 function shuffle(arr){ const a=[...arr]; for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
 function contactLabel(t){ const f=CONTACT_TYPES.find(c=>c.key===t); return f?f.label:t; }
 
-// ============== 照片压缩 ==============
+// ============== 照片压缩（缩略图，控制云端数据量） ==============
 function compressImage(file, callback) {
   const reader = new FileReader();
   reader.onload = (e) => {
     const img = new Image();
     img.onload = () => {
       const canvas = document.createElement('canvas');
-      const maxW = 800;
+      const maxW = 200;   // 缩略图宽度，控制在 ~6KB，避免云端超 100KB 限制
       const scale = Math.min(1, maxW / img.width);
       canvas.width = Math.round(img.width * scale);
       canvas.height = Math.round(img.height * scale);
       const ctx = canvas.getContext('2d');
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-      callback(canvas.toDataURL('image/jpeg', 0.72));
+      callback(canvas.toDataURL('image/jpeg', 0.5));
     };
     img.onerror = () => showToast('图片读取失败');
     img.src = e.target.result;
@@ -279,7 +279,7 @@ function renderForm() {
       <div class="grid grid-cols-2 gap-3 mb-4"><div><label class="label-text">年龄</label><input class="input-field" type="number" id="f-age" value="${p.age||26}" min="18" max="60"></div><div><label class="label-text">身高 (cm)</label><input class="input-field" type="number" id="f-height" value="${p.height||165}" min="140" max="220"></div></div>
       <div class="mb-4"><label class="label-text">老家（省）</label><select class="input-field" id="f-hometown">${opts}</select></div>
       <div class="mb-4"><label class="label-text">联系方式（选一种，填账号）</label><div class="flex gap-2 mb-2" id="contact-type">${CONTACT_TYPES.map(c=>`<div class="tag-chip ${ct===c.key?'selected':''}" data-radio="contact" data-val="${c.key}">${c.label}</div>`).join('')}</div><input class="input-field" id="f-contact-account" value="${p.contact?.account||''}" placeholder="填写对应账号（如抖音号 / 小红书号 / 微信号）"></div>
-      <div class="mb-2"><label class="label-text">上传照片（用于 AI 颜值打分，建议正面清晰照）</label><div class="grid grid-cols-3 gap-2" id="photo-grid">${[0,1,2].map(i=>`<div class="photo-slot" data-photo="${i}">${photos[i]?`<img src="${photos[i]}"><div class="remove" data-rm-photo="${i}">×</div>`:'<span>+</span>'}</div>`).join('')}</div><div class="text-xs text-gray-400 mt-2">点击格子选择本地照片（自动压缩）</div></div>
+      <div class="mb-2"><label class="label-text">上传照片（用于 AI 颜值打分，建议正面清晰照）</label><div id="photo-grid"><div class="photo-slot" data-photo="0" style="max-width:180px">${photos[0]?`<img src="${photos[0]}"><div class="remove" data-rm-photo="0">×</div>`:'<span>+</span>'}</div></div><div class="text-xs text-gray-400 mt-2">点击上传一张正面照（自动压缩为缩略图）</div></div>
     </div>
     <div class="bg-white rounded-2xl p-5 shadow-sm mb-4">
       <h3 class="font-bold text-gray-800 mb-3">🎯 择偶要求</h3>
@@ -424,7 +424,8 @@ function collectForm() {
   const hMax = parseInt(document.getElementById('r-hMax').value);
   const faceMin = parseFloat(document.getElementById('r-faceMin').value);
   const hometowns = [...document.querySelectorAll('[data-toggle-ht].selected')].map(el=>el.dataset.toggleHt);
-  const photos = State.tempPhotos.length ? [...State.tempPhotos] : (State.profile?.photos || []);
+  const rawPhotos = State.tempPhotos.length ? [...State.tempPhotos] : (State.profile?.photos || []);
+  const photos = rawPhotos.filter(p => p && p.length > 10); // 过滤空值，只保留有效照片
 
   if(!photos.length) { showToast('请至少上传一张照片用于打分'); return; }
 
@@ -692,7 +693,7 @@ document.addEventListener('click', function(e) {
   if(rm) {
     e.stopPropagation();
     const i = parseInt(rm.dataset.rmPhoto);
-    if(!State.tempPhotos.length) State.tempPhotos = [...(State.profile?.photos||[]), '', ''].slice(0,3);
+    if(!State.tempPhotos.length) State.tempPhotos = [...(State.profile?.photos||[]), ''].slice(0,1);
     State.tempPhotos[i] = '';
     const slot = document.querySelector(`[data-photo="${i}"]`);
     if(slot) slot.innerHTML = '<span>+</span>';
@@ -703,8 +704,7 @@ document.getElementById('photo-input').addEventListener('change', function(e) {
   const file = e.target.files[0];
   if(!file) return;
   compressImage(file, (dataUrl) => {
-    if(!State.tempPhotos.length) State.tempPhotos = [...(State.profile?.photos||[]), '', ''].slice(0,3);
-    while(State.tempPhotos.length < 3) State.tempPhotos.push('');
+    if(!State.tempPhotos.length) State.tempPhotos = [...(State.profile?.photos||[]), ''].slice(0,1);
     State.tempPhotos[pendingPhotoIndex] = dataUrl;
     // 只更新照片格子，不重渲染整个表单（避免丢失已填输入）
     const slot = document.querySelector(`[data-photo="${pendingPhotoIndex}"]`);
