@@ -192,6 +192,12 @@ async function detectFace(base64DataUrl) {
 function getRecommendations() {
   if(!State.profile) return [];
   resetSeenIfNewDay();
+  // 当天推荐缓存：避免页面重渲染导致推荐"消失"
+  const cacheKey = 'xqbb_rec_' + new Date().toDateString() + '_' + State.profile.id;
+  try {
+    const cached = JSON.parse(localStorage.getItem(cacheKey) || 'null');
+    if (cached && Array.isArray(cached) && cached.length > 0) return cached;
+  } catch(e) {}
   const r=State.profile.requirement, me=State.profile;
   const candidates = State.groupData.filter(p => {
     if(p.id===me.id) return false;
@@ -206,6 +212,7 @@ function getRecommendations() {
   const picked = shuffle(candidates).slice(0,5);
   State.seenIds = [...State.seenIds, ...picked.map(p=>p.id)];
   saveSeen();
+  localStorage.setItem(cacheKey, JSON.stringify(picked));
   return picked;
 }
 
@@ -381,9 +388,20 @@ function renderLeader() {
 // ============== 事件绑定 ==============
 function bindScreen() {
   document.querySelectorAll('[data-screen]').forEach(el => {
-    el.onclick = () => { State.screen = el.dataset.screen; render(); };
+    el.onclick = () => {
+      const target = el.dataset.screen;
+      if (target === 'recommend') goRecommend();
+      else { State.screen = target; render(); }
+    };
   });
   document.body.onclick = onClick;
+}
+function goRecommend() {
+  showToast('加载最新数据...');
+  fetchGroupData().then(() => {
+    State.screen = 'recommend';
+    render();
+  });
 }
 function onClick(e) {
   const t = e.target.closest('[data-act]');
@@ -392,7 +410,7 @@ function onClick(e) {
   switch(act) {
     case 'go-home': State.screen='home'; break;
     case 'go-form': State.tempPhotos = State.profile?.photos ? [...State.profile.photos] : []; State.screen='form'; break;
-    case 'go-recommend': State.screen='recommend'; break;
+    case 'go-recommend': goRecommend(); return;
     case 'goto-sync': State.screen='sync'; break;
     case 'goto-settings': State.screen='settings'; break;
     case 'back': State.screen='home'; break;
