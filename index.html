@@ -57,7 +57,7 @@ const CONTACT_TYPES = [
   { key: 'wechat', label: '微信' }
 ];
 
-// ============== 云端存储（JSONBin） ==============
+// ============== 云端存储（JSONBin 存文字+压缩照片） ==============
 const JSONBIN_BIN_ID = '6a8db684f5f4af5e2940c7a3';
 const JSONBIN_MASTER_KEY = '$2a$10$j51aNEBT1UPaeXvOr0khMeJq9/VAWOPtVLFB/LyCzOj1EVSy87FXG';
 
@@ -144,13 +144,13 @@ function compressImage(file, callback) {
     const img = new Image();
     img.onload = () => {
       const canvas = document.createElement('canvas');
-      const maxW = 200;   // 缩略图宽度，控制在 ~6KB，避免云端超 100KB 限制
+      const maxW = 200;  // 缩略图宽度，约 10KB，平衡清晰度与云端容量（约可存 16 人）
       const scale = Math.min(1, maxW / img.width);
       canvas.width = Math.round(img.width * scale);
       canvas.height = Math.round(img.height * scale);
       const ctx = canvas.getContext('2d');
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-      callback(canvas.toDataURL('image/jpeg', 0.5));
+      callback(canvas.toDataURL('image/jpeg', 0.55));  // 返回 base64 dataUrl，直接存云端
     };
     img.onerror = () => showToast('图片读取失败');
     img.src = e.target.result;
@@ -189,6 +189,29 @@ async function detectFace(base64DataUrl) {
 }
 
 // ============== 匹配 ==============
+// 双向匹配：对方符合我的要求，同时我也符合对方的要求，才算互相推荐
+function isMutualMatch(me, other) {
+  // 1. 对方是否满足我的择偶要求
+  const r = me.requirement;
+  if (!r) return false;
+  if (other.gender !== r.gender) return false;
+  if (other.age < r.ageMin || other.age > r.ageMax) return false;
+  if (other.height < r.heightMin || other.height > r.heightMax) return false;
+  if ((other.faceScore || 0) < (r.faceScoreMin || 0)) return false;
+  if (r.hometowns && r.hometowns.length > 0 && !r.hometowns.includes(other.hometown)) return false;
+
+  // 2. 我是否满足对方的择偶要求（对方没填要求视为满足，兼容旧数据）
+  const r2 = other.requirement;
+  if (!r2) return true;
+  if (me.gender !== r2.gender) return false;
+  if (me.age < r2.ageMin || me.age > r2.ageMax) return false;
+  if (me.height < r2.heightMin || me.height > r2.heightMax) return false;
+  if ((me.faceScore || 0) < (r2.faceScoreMin || 0)) return false;
+  if (r2.hometowns && r2.hometowns.length > 0 && !r2.hometowns.includes(me.hometown)) return false;
+
+  return true;
+}
+
 function getRecommendations() {
   if(!State.profile) return [];
   resetSeenIfNewDay();
@@ -198,16 +221,11 @@ function getRecommendations() {
     const cached = JSON.parse(localStorage.getItem(cacheKey) || 'null');
     if (cached && Array.isArray(cached) && cached.length > 0) return cached;
   } catch(e) {}
-  const r=State.profile.requirement, me=State.profile;
+  const me = State.profile;
   const candidates = State.groupData.filter(p => {
     if(p.id===me.id) return false;
     if(State.seenIds.includes(p.id)) return false;
-    if(p.gender!==r.gender) return false;
-    if(p.age<r.ageMin || p.age>r.ageMax) return false;
-    if(p.height<r.heightMin || p.height>r.heightMax) return false;
-    if((p.faceScore||0) < (r.faceScoreMin||0)) return false;
-    if(r.hometowns && r.hometowns.length>0 && !r.hometowns.includes(p.hometown)) return false;
-    return true;
+    return isMutualMatch(me, p);
   });
   const picked = shuffle(candidates).slice(0,5);
   State.seenIds = [...State.seenIds, ...picked.map(p=>p.id)];
@@ -243,7 +261,7 @@ function renderTabBar() {
 function renderHome() {
   if(!State.profile) {
     return `<div class="px-5 pt-12">
-      <div class="text-center mb-8"><div class="text-5xl mb-3">💖</div><h1 class="text-2xl font-bold text-gray-800">杭州相亲帮帮</h1><p class="text-sm text-gray-500 mt-2">上传照片 · AI 颜值打分 · 每日匹配</p><div class="inline-block mt-2 text-xs text-pink-500 bg-pink-50 px-2 py-0.5 rounded-full">v3.0 · 自动同步版</div></div>
+      <div class="text-center mb-8"><div class="text-5xl mb-3">💖</div><h1 class="text-2xl font-bold text-gray-800">杭州相亲帮帮</h1><p class="text-sm text-gray-500 mt-2">上传照片 · AI 颜值打分 · 每日匹配</p><div class="inline-block mt-2 text-xs text-pink-500 bg-pink-50 px-2 py-0.5 rounded-full">v4.2 · 双向匹配版</div></div>
       <div class="bg-white rounded-2xl p-5 shadow-sm mb-4"><h3 class="font-bold text-gray-800 mb-3">📌 这是什么？</h3><p class="text-sm text-gray-600 leading-relaxed">群里填资料自动同步，AI 给颜值客观打分，每天推荐 5 个符合条件的群友。</p></div>
       <div class="bg-white rounded-2xl p-5 shadow-sm mb-6"><h3 class="font-bold text-gray-800 mb-3">✨ 怎么用？</h3><ol class="text-sm text-gray-600 leading-relaxed space-y-2"><li>1️⃣ 填资料 + 上传 1 张照片</li><li>2️⃣ AI 系统打分（客观颜值分）</li><li>3️⃣ 自动同步云端，无需手动操作</li><li>4️⃣ 每天看 5 个推荐</li></ol></div>
       <button class="btn-primary" data-act="go-form">开始填写资料 →</button>
@@ -344,7 +362,7 @@ function renderRecommend() {
     return `<div class="px-5 pt-12 text-center"><div class="text-5xl mb-3">😢</div><p class="text-gray-700 font-medium mb-2">今天符合要求的都被推荐过啦</p><p class="text-sm text-gray-500 mb-4">明天 0 点会重置已推荐池</p><button class="btn-secondary" data-act="goto-settings">放宽要求 →</button></div>`;
   }
   return `<div class="px-5 pt-6"><div class="flex items-center justify-between mb-4"><h2 class="text-lg font-bold text-gray-800">💘 今日 5 个推荐</h2><span class="text-xs text-gray-400">已推荐 ${State.seenIds.length}</span></div>
-    <div class="space-y-3">${recs.map(p=>`<div class="rec-card p-4"><div class="flex gap-3"><div class="w-20 h-24 rounded-lg overflow-hidden bg-pink-50 flex-shrink-0">${p.photos&&p.photos[0]?`<img src="${p.photos[0]}" class="w-full h-full object-cover" onerror="this.style.display='none'">`:'<div class="w-full h-full flex items-center justify-center text-pink-300 text-2xl">📷</div>'}</div><div class="flex-1 min-w-0"><div class="flex items-center gap-2 mb-1"><div class="font-bold text-gray-800">${p.nickname}</div><span class="badge bg-pink-100 text-pink-600">颜值 ${(p.faceScore||0).toFixed(1)}</span></div><div class="text-sm text-gray-500 mb-1">${p.gender==='female'?'♀':'♂'} · ${p.age}岁 · ${p.height}cm</div><div class="text-xs text-gray-400">📍 ${p.hometown}</div>${p.contact?.type?`<div class="text-xs text-pink-500 mt-1">📱 ${contactLabel(p.contact.type)}：${p.contact.account||''}</div>`:''}</div></div></div>`).join('')}</div>
+    <div class="space-y-3">${recs.map(p=>`<div class="rec-card p-4" data-act="view-profile" data-id="${p.id}" style="cursor:pointer"><div class="flex gap-3"><div class="w-20 h-24 rounded-lg overflow-hidden bg-pink-50 flex-shrink-0">${p.photos&&p.photos[0]?`<img src="${p.photos[0]}" class="w-full h-full object-cover" onerror="this.style.display='none'">`:'<div class="w-full h-full flex items-center justify-center text-pink-300 text-2xl">📷</div>'}</div><div class="flex-1 min-w-0"><div class="flex items-center gap-2 mb-1"><div class="font-bold text-gray-800">${p.nickname}</div><span class="badge bg-pink-100 text-pink-600">颜值 ${(p.faceScore||0).toFixed(1)}</span></div><div class="text-sm text-gray-500 mb-1">${p.gender==='female'?'♀':'♂'} · ${p.age}岁 · ${p.height}cm</div><div class="text-xs text-gray-400">📍 ${p.hometown}</div><div class="text-xs text-pink-400 mt-1">👆 点开看照片和联系方式</div></div><div class="flex items-center text-2xl text-gray-300">›</div></div></div>`).join('')}</div>
     <div class="mt-4 text-center text-xs text-gray-400">每天 0 点重置 · 换一批新推荐</div></div>`;
 }
 
@@ -368,7 +386,7 @@ function renderSettings() {
     <div class="bg-white rounded-2xl p-5 shadow-sm mb-4"><h3 class="font-bold text-gray-800 mb-3">📋 我的颜值分</h3><div class="text-center py-4"><div class="text-4xl font-bold text-pink-500">${p&&p.faceScore?p.faceScore.toFixed(1):'-'}</div><div class="text-sm text-gray-500 mt-1">满分 10 分 · 剩余重评 ${remain>0?remain:0} 次</div></div>${p?`<button class="btn-ghost w-full" data-act="re-score" ${remain<=0?'disabled':''}>${remain<=0?'重评次数已用完':'重新评测 ('+remain+' 次剩余)'}</button>`:''}</div>
     <div class="bg-white rounded-2xl p-5 shadow-sm mb-4"><h3 class="font-bold text-gray-800 mb-3">📝 资料编辑</h3><button class="btn-secondary" data-act="go-form">编辑我的资料</button></div>
     <div class="bg-white rounded-2xl p-5 shadow-sm mb-4"><h3 class="font-bold text-gray-800 mb-3">📦 我的数据</h3><button class="btn-ghost w-full" data-act="copy-me">导出我的资料（发给群主合并）</button></div>
-    <div class="text-center mt-6"><button class="text-xs text-gray-300 underline" data-act="leader-entry">群主管理入口</button><div class="text-xs text-gray-400 mt-6">杭州相亲帮帮 v2.0 · 数据存本地</div></div>
+    <div class="text-center mt-6"><button class="text-xs text-gray-300 underline" data-act="leader-entry">群主管理入口</button><div class="text-xs text-gray-400 mt-6">杭州相亲帮帮 v4.2 · 云端同步</div></div>
   </div>`;
 }
 
@@ -421,8 +439,39 @@ function onClick(e) {
     case 'refresh-data': refreshGroupData(); return;
     case 're-score': startReScore(); return;
     case 'leader-entry': openLeaderAuth(); return;
+    case 'view-profile': openProfileModal(State.groupData.find(x=>x.id===t.dataset.id)); return;
   }
   render();
+}
+
+// ============== 推荐详情弹窗 ==============
+function openProfileModal(person) {
+  if(!person) return;
+  const m = document.createElement('div');
+  m.className = 'modal-mask';
+  m.style.alignItems = 'flex-end';
+  m.style.padding = '0';
+  const photo = person.photos && person.photos[0] ? `<img src="${person.photos[0]}" style="width:100%;max-height:55vh;object-fit:cover;display:block" onerror="this.outerHTML='<div style=&quot;width:100%;height:200px;background:#fce7f3;display:flex;align-items:center;justify-content:center;font-size:48px&quot;>📷</div>'">` : `<div style="width:100%;height:200px;background:#fce7f3;display:flex;align-items:center;justify-content:center;font-size:48px">📷</div>`;
+  m.innerHTML = `<div class="modal-box" style="width:100%;max-width:480px;border-radius:20px 20px 0 0;padding:0;overflow:hidden;max-height:90vh;overflow-y:auto">
+    <div style="position:relative">
+      ${photo}
+      <div data-modal="close" style="position:absolute;top:12px;right:12px;background:rgba(0,0,0,.55);color:#fff;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer">×</div>
+    </div>
+    <div style="padding:20px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <div style="font-size:22px;font-weight:700;color:#1f2937">${person.nickname}</div>
+        <span class="badge" style="background:#fce7f3;color:#be185d">颜值 ${(person.faceScore||0).toFixed(1)}</span>
+      </div>
+      <div style="font-size:14px;color:#6b7280;margin-bottom:14px">${person.gender==='female'?'♀ 女':'♂ 男'} · ${person.age}岁 · ${person.height}cm · 📍${person.hometown}</div>
+      ${person.contact?.account ? `<div style="background:#fdf2f8;border-radius:14px;padding:14px;margin-bottom:12px"><div style="font-size:12px;color:#ec4899;margin-bottom:4px">📱 联系方式（${contactLabel(person.contact.type)}）</div><div style="font-size:20px;font-weight:700;color:#1f2937;word-break:break-all">${person.contact.account}</div></div>` : ''}
+      <div style="font-size:12px;color:#16a34a;background:#f0fdf4;border-radius:12px;padding:10px 14px">💘 你们互相符合对方的择偶要求，已双向匹配</div>
+      <button class="btn-ghost" style="width:100%;margin-top:14px" data-modal="close">关闭</button>
+    </div>
+  </div>`;
+  document.body.appendChild(m);
+  m.addEventListener('click', (e) => {
+    if (e.target === m || e.target.closest('[data-modal="close"]')) m.remove();
+  });
 }
 
 // ============== 表单收集 ==============
@@ -451,7 +500,8 @@ function collectForm() {
     id: State.profile?.id || uid(),
     nickname, gender, age, height, hometown,
     contact: { type: ct, account: contactAccount },
-    photos,
+    photos,  // 压缩后的 base64 照片（约10KB/张，存云端用于展示）
+    photoDataUrl: State.tempPhotoDataUrl || State.profile?.photoDataUrl,  // 本地保留用于AI打分，不上传云端
     faceScore: State.profile?.faceScore || 0,
     faceScoreCount: State.profile?.faceScoreCount || 0,
     requirement: { gender: rGender, ageMin, ageMax, heightMin: hMin, heightMax: hMax, hometowns, faceScoreMin: faceMin },
@@ -465,13 +515,14 @@ function collectForm() {
 
 // ============== AI 打分 ==============
 async function startFaceScore() {
-  const photos = State.tempPhotos.length ? State.tempPhotos : (State.profile?.photos || []);
-  if(!photos[0]) { showToast('请先上传照片'); return; }
+  // AI 打分用本地 dataUrl（不存云端），优先用刚上传的临时数据
+  const dataUrl = State.tempPhotoDataUrl || State.profile?.photoDataUrl;
+  if(!dataUrl) { showToast('请先上传照片'); return; }
   const btn = document.getElementById('quiz-start');
   if(btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> 打分中...'; }
   try {
-    const result = await detectFace(photos[0]);
-    const score = Math.round(result.beauty / 10 * 10) / 10;  // 0-100 → 0-10
+    const result = await detectFace(dataUrl);
+    const score = Math.round(result.beauty / 10 * 10) / 10;
     State.profile.faceScore = score;
     State.profile.faceAge = result.age;
     State.profile.faceGender = result.gender;
@@ -497,12 +548,12 @@ async function startFaceScore() {
 async function startReScore() {
   const remain = 3 - (State.profile?.faceScoreCount || 0);
   if(remain <= 0) { showToast('重评次数已用完'); return; }
-  const photos = State.profile?.photos || [];
-  if(!photos[0]) { showToast('请先在资料里上传照片'); return; }
+  const dataUrl = State.profile?.photoDataUrl;
+  if(!dataUrl) { showToast('请先在资料里重新上传照片'); return; }
   if(!confirm(`确定重新评测？剩余 ${remain} 次机会。`)) return;
   showToast('重新评测中...');
   try {
-    const result = await detectFace(photos[0]);
+    const result = await detectFace(dataUrl);
     const score = Math.round(result.beauty / 10 * 10) / 10;
     State.profile.faceScore = score;
     State.profile.faceAge = result.age;
@@ -524,8 +575,12 @@ function copyMyProfile() {
 }
 async function refreshGroupData() {
   showToast('正在刷新...');
-  await fetchGroupData();
-  showToast('✅ 已刷新，云端共 ' + State.groupData.length + ' 位');
+  const result = await fetchGroupData();
+  if (result === null) {
+    showToast('❌ 拉取失败，请检查网络后重试');
+  } else {
+    showToast('✅ 已刷新，云端共 ' + State.groupData.length + ' 位');
+  }
   render();
 }
 // ============== 云端自动同步 ==============
@@ -534,6 +589,7 @@ async function fetchGroupData() {
     const res = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`, {
       headers: { 'X-Master-Key': JSONBIN_MASTER_KEY }
     });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
     const data = await res.json();
     const users = (data.record && data.record.users) || [];
     if (Array.isArray(users)) {
@@ -543,7 +599,7 @@ async function fetchGroupData() {
     return State.groupData;
   } catch(e) {
     console.error('拉取群数据失败', e);
-    return State.groupData;
+    return null;
   }
 }
 
@@ -564,11 +620,9 @@ async function uploadUsers(users) {
 async function uploadMyProfile() {
   if (!State.profile) return false;
   try {
-    // 上传前裁剪照片：只保留第1张，避免旧版多张照片占满云端空间
+    // 上传前去除冗余的本地字段（photoDataUrl 与 photos[0] 重复，不重复传云端）
     const profileToUpload = Object.assign({}, State.profile);
-    if (Array.isArray(profileToUpload.photos) && profileToUpload.photos.length > 1) {
-      profileToUpload.photos = [profileToUpload.photos[0]];
-    }
+    delete profileToUpload.photoDataUrl;
     // 读最新 → 合并自己 → 写回（避免覆盖他人数据）
     const res = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`, {
       headers: { 'X-Master-Key': JSONBIN_MASTER_KEY }
@@ -726,12 +780,14 @@ document.addEventListener('click', function(e) {
 document.getElementById('photo-input').addEventListener('change', function(e) {
   const file = e.target.files[0];
   if(!file) return;
+  const slot = document.querySelector(`[data-photo="${pendingPhotoIndex}"]`);
+  if(slot) slot.innerHTML = '<div class="spinner" style="border-color:#ec4899;border-top-color:transparent"></div>';
   compressImage(file, (dataUrl) => {
     if(!State.tempPhotos.length) State.tempPhotos = [...(State.profile?.photos||[]), ''].slice(0,1);
-    State.tempPhotos[pendingPhotoIndex] = dataUrl;
-    // 只更新照片格子，不重渲染整个表单（避免丢失已填输入）
-    const slot = document.querySelector(`[data-photo="${pendingPhotoIndex}"]`);
+    State.tempPhotos[pendingPhotoIndex] = dataUrl;  // base64 直接存云端（约10KB）
+    State.tempPhotoDataUrl = dataUrl;  // 本地保留用于AI打分
     if(slot) slot.innerHTML = `<img src="${dataUrl}"><div class="remove" data-rm-photo="${pendingPhotoIndex}">×</div>`;
+    showToast('✅ 照片已就绪');
   });
   e.target.value = '';
 });
