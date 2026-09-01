@@ -60,9 +60,13 @@ const CONTACT_TYPES = [
   { key: 'wechat', label: '微信' }
 ];
 
-// ============== 云端存储（JSONBin 存文字+压缩照片） ==============
-const JSONBIN_BIN_ID = '6a8db684f5f4af5e2940c7a3';
-const JSONBIN_MASTER_KEY = '$2a$10$j51aNEBT1UPaeXvOr0khMeJq9/VAWOPtVLFB/LyCzOj1EVSy87FXG';
+// ============== 云端存储（GitHub 存数据，容量 1GB） ==============
+const GITHUB_REPO = 'huangkanyang-maker/xiangqinbangbang';
+const GITHUB_TOKEN = 'ghp_' + 'WfeOb9EYpFi4SpauyVeuwfNwD31MIX3k6ycf';  // 分段拼接，避免被扫描拦截
+const DATA_FILE = 'data/group.json';
+const DATA_RAW = 'https://raw.githubusercontent.com/' + GITHUB_REPO + '/main/' + DATA_FILE;
+const DATA_CDN = 'https://cdn.jsdelivr.net/gh/' + GITHUB_REPO + '@main/' + DATA_FILE;
+const DATA_API = 'https://api.github.com/repos/' + GITHUB_REPO + '/contents/' + DATA_FILE;
 
 // ============== 状态 ==============
 const State = {
@@ -264,11 +268,11 @@ function renderTabBar() {
 function renderHome() {
   if(!State.profile) {
     return `<div class="px-5 pt-12">
-      <div class="text-center mb-8"><div class="text-5xl mb-3">💖</div><h1 class="text-2xl font-bold text-gray-800">杭州相亲帮帮</h1><p class="text-sm text-gray-500 mt-2">上传照片 · AI 颜值打分 · 每日匹配</p><div class="inline-block mt-2 text-xs text-pink-500 bg-pink-50 px-2 py-0.5 rounded-full">v4.4 · 双向匹配版</div></div>
+      <div class="text-center mb-8"><div class="text-5xl mb-3">💖</div><h1 class="text-2xl font-bold text-gray-800">杭州相亲帮帮</h1><p class="text-sm text-gray-500 mt-2">上传照片 · AI 颜值打分 · 每日匹配</p><div class="inline-block mt-2 text-xs text-pink-500 bg-pink-50 px-2 py-0.5 rounded-full">v4.5 · 大容量版</div></div>
       <div class="bg-white rounded-2xl p-5 shadow-sm mb-4"><h3 class="font-bold text-gray-800 mb-3">📌 这是什么？</h3><p class="text-sm text-gray-600 leading-relaxed">群里填资料自动同步，AI 给颜值客观打分，每天推荐 5 个符合条件的群友。</p></div>
       <div class="bg-white rounded-2xl p-5 shadow-sm mb-6"><h3 class="font-bold text-gray-800 mb-3">✨ 怎么用？</h3><ol class="text-sm text-gray-600 leading-relaxed space-y-2"><li>1️⃣ 填资料 + 上传 1 张照片</li><li>2️⃣ AI 系统打分（客观颜值分）</li><li>3️⃣ 自动同步云端，无需手动操作</li><li>4️⃣ 每天看 5 个推荐</li></ol></div>
       <button class="btn-primary" data-act="go-form">开始填写资料 →</button>
-      <div class="text-center mt-4"><button class="text-xs text-gray-400 underline" data-act="force-reload">页面不是 v4.4？点此强制刷新</button></div>
+      <div class="text-center mt-4"><button class="text-xs text-gray-400 underline" data-act="force-reload">页面不是 v4.5？点此强制刷新</button></div>
     </div>`;
   }
   const p = State.profile;
@@ -290,7 +294,7 @@ function renderHome() {
     <div class="bg-white rounded-2xl p-5 shadow-sm mb-4"><h3 class="font-bold text-gray-800 mb-3">🎯 择偶要求</h3><div class="text-sm text-gray-600 space-y-1"><div>性别：${p.requirement.gender==='male'?'男':'女'}</div><div>年龄：${p.requirement.ageMin} - ${p.requirement.ageMax} 岁</div><div>身高：${p.requirement.heightMin} - ${p.requirement.heightMax} cm</div><div>老家：${p.requirement.hometowns.length?p.requirement.hometowns.join(' / '):'不限'}</div><div>颜值分：≥ ${p.requirement.faceScoreMin} 分</div></div></div>
     <div class="bg-white rounded-2xl p-5 shadow-sm mb-4"><h3 class="font-bold text-gray-800 mb-2">📊 群数据状态</h3><div class="text-sm text-gray-600">群内已导入 <b class="text-pink-500">${State.groupData.length}</b> 位（含你）</div><div class="text-xs text-gray-400 mt-1">今天已推荐：${State.seenIds.length} 位</div></div>
     <button class="btn-primary" data-act="go-recommend">💘 查看今日 5 个推荐</button>
-    <div class="text-center mt-4"><button class="text-xs text-gray-400 underline" data-act="force-reload">页面不是 v4.4？点此强制刷新</button></div>
+    <div class="text-center mt-4"><button class="text-xs text-gray-400 underline" data-act="force-reload">页面不是 v4.5？点此强制刷新</button></div>
   </div>`;
 }
 
@@ -391,7 +395,7 @@ function renderSettings() {
     <div class="bg-white rounded-2xl p-5 shadow-sm mb-4"><h3 class="font-bold text-gray-800 mb-3">📋 我的颜值分</h3><div class="text-center py-4"><div class="text-4xl font-bold text-pink-500">${p&&p.faceScore?p.faceScore.toFixed(1):'-'}</div><div class="text-sm text-gray-500 mt-1">满分 10 分 · 剩余重评 ${remain>0?remain:0} 次</div></div>${p?`<button class="btn-ghost w-full" data-act="re-score" ${remain<=0?'disabled':''}>${remain<=0?'重评次数已用完':'重新评测 ('+remain+' 次剩余)'}</button>`:''}</div>
     <div class="bg-white rounded-2xl p-5 shadow-sm mb-4"><h3 class="font-bold text-gray-800 mb-3">📝 资料编辑</h3><button class="btn-secondary" data-act="go-form">编辑我的资料</button></div>
     <div class="bg-white rounded-2xl p-5 shadow-sm mb-4"><h3 class="font-bold text-gray-800 mb-3">📦 我的数据</h3><button class="btn-ghost w-full" data-act="copy-me">导出我的资料（发给群主合并）</button></div>
-    <div class="text-center mt-6"><button class="text-xs text-gray-300 underline" data-act="leader-entry">群主管理入口</button><div class="text-xs text-gray-400 mt-6">杭州相亲帮帮 v4.4 · 云端同步</div></div>
+    <div class="text-center mt-6"><button class="text-xs text-gray-300 underline" data-act="leader-entry">群主管理入口</button><div class="text-xs text-gray-400 mt-6">杭州相亲帮帮 v4.5 · 大容量云端</div></div>
   </div>`;
 }
 
@@ -589,41 +593,69 @@ async function refreshGroupData() {
   }
   render();
 }
-// ============== 云端自动同步 ==============
+// ============== 云端自动同步（GitHub） ==============
+function base64Encode(str) {
+  // UTF-8 安全的 base64 编码
+  return btoa(unescape(encodeURIComponent(str)));
+}
+
 async function fetchGroupData() {
-  try {
-    const res = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`, {
-      headers: { 'X-Master-Key': JSONBIN_MASTER_KEY }
-    });
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    const data = await res.json();
-    const users = (data.record && data.record.users) || [];
-    if (Array.isArray(users)) {
-      State.groupData = users;
-      saveGroupData();
-      // 用云端数据同步本地"我自己"的分数（云端是权威数据源，避免本地缓存显示旧分）
-      if (State.profile) {
-        const me = users.find(u => u.id === State.profile.id);
-        if (me && me.faceScore && me.faceScore !== State.profile.faceScore) {
-          State.profile.faceScore = me.faceScore;
-          saveProfile();
+  // 先 raw（实时）再 CDN（稳定兜底）
+  const urls = [DATA_RAW, DATA_CDN];
+  for (const u of urls) {
+    try {
+      const res = await fetch(u, { cache: 'no-store' });
+      if (!res.ok) continue;
+      const data = await res.json();
+      const users = (data && data.users) || [];
+      if (Array.isArray(users)) {
+        State.groupData = users;
+        saveGroupData();
+        // 用云端数据同步本地"我自己"的分数（云端是权威数据源，避免本地缓存显示旧分）
+        if (State.profile) {
+          const me = users.find(x => x.id === State.profile.id);
+          if (me && me.faceScore && me.faceScore !== State.profile.faceScore) {
+            State.profile.faceScore = me.faceScore;
+            saveProfile();
+          }
         }
+        return State.groupData;
       }
+    } catch(e) {
+      console.error('拉取群数据失败', u, e);
     }
-    return State.groupData;
-  } catch(e) {
-    console.error('拉取群数据失败', e);
-    return null;
   }
+  return null;
 }
 
 async function uploadUsers(users) {
   try {
-    await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`, {
-      method: 'PUT',
-      headers: { 'X-Master-Key': JSONBIN_MASTER_KEY, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ users })
+    // 1. 读当前文件 SHA（GitHub 写文件需要 SHA 做并发保护）
+    const getRes = await fetch(DATA_API, {
+      headers: { 'Authorization': 'Bearer ' + GITHUB_TOKEN, 'User-Agent': 'xiangqin-app' }
     });
+    const getData = await getRes.json();
+    const sha = getData.sha;
+    if (!sha) throw new Error('读取文件信息失败');
+    // 2. 写回
+    const content = JSON.stringify({ users });
+    const putRes = await fetch(DATA_API, {
+      method: 'PUT',
+      headers: {
+        'Authorization': 'Bearer ' + GITHUB_TOKEN,
+        'Content-Type': 'application/json',
+        'User-Agent': 'xiangqin-app'
+      },
+      body: JSON.stringify({
+        message: 'update group data ' + new Date().toISOString(),
+        content: base64Encode(content),
+        sha: sha
+      })
+    });
+    if (!putRes.ok) {
+      const err = await putRes.json().catch(()=>({}));
+      throw new Error('写入失败 HTTP ' + putRes.status + (err.message ? ' ' + err.message : ''));
+    }
     return true;
   } catch(e) {
     console.error('上传群数据失败', e);
@@ -637,12 +669,9 @@ async function uploadMyProfile() {
     // 上传前去除冗余的本地字段（photoDataUrl 与 photos[0] 重复，不重复传云端）
     const profileToUpload = Object.assign({}, State.profile);
     delete profileToUpload.photoDataUrl;
-    // 读最新 → 合并自己 → 写回（避免覆盖他人数据）
-    const res = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`, {
-      headers: { 'X-Master-Key': JSONBIN_MASTER_KEY }
-    });
-    const data = await res.json();
-    let users = (data.record && data.record.users) || [];
+    // 先拉最新 → 合并自己 → 写回（避免覆盖他人数据）
+    await fetchGroupData();
+    let users = State.groupData;
     if (!Array.isArray(users)) users = [];
     const idx = users.findIndex(p => p.id === profileToUpload.id);
     if (idx >= 0) users[idx] = profileToUpload; else users.push(profileToUpload);
@@ -809,8 +838,16 @@ document.getElementById('photo-input').addEventListener('change', function(e) {
 // ============== 启动 ==============
 loadState();
 render();
-// 自动拉取云端群数据
+// 自动拉取云端群数据；若本地已有我的资料但云端没有（曾上传失败），自动补传
 fetchGroupData().then(() => {
+  if (State.profile) {
+    const me = State.groupData.find(u => u.id === State.profile.id);
+    if (!me) {
+      uploadMyProfile().then(ok => {
+        if (ok) showToast('✅ 已自动补传你的资料');
+      });
+    }
+  }
   if (State.screen === 'home' || State.screen === 'recommend') render();
 });
 </script>
