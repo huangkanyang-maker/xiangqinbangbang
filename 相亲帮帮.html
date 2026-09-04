@@ -43,6 +43,29 @@
   .tag-chip.selected { border-color:var(--primary); background:var(--primary-light); color:var(--primary-dark); }
   .spinner { display:inline-block; width:18px; height:18px; border:2px solid #fff; border-top-color:transparent; border-radius:50%; animation:spin .7s linear infinite; }
   @keyframes spin { to{transform:rotate(360deg);} }
+/* ===== v5.0 心动滑卡（Tinder 风格） ===== */
+.deck-wrap{position:relative;width:min(94vw,400px);height:min(68vh,600px);min-height:420px;margin:0 auto}
+.swipe-card{position:absolute;inset:0;margin:auto;width:100%;height:100%;border-radius:26px;overflow:hidden;background:#fff;box-shadow:0 12px 34px rgba(0,0,0,.2);user-select:none;touch-action:none;transform-origin:50% 100%}
+.swipe-card.back1{transform:scale(.94) translateY(12px);box-shadow:0 6px 18px rgba(0,0,0,.12)}
+.swipe-card.back2{transform:scale(.88) translateY(22px);box-shadow:0 4px 12px rgba(0,0,0,.08)}
+.swipe-card.top{cursor:grab}
+.card-photo{width:100%;height:74%;object-fit:cover;display:block;background:#fce7f3}
+.card-photo-empty{width:100%;height:74%;background:linear-gradient(135deg,#fdf2f8,#fbcfe8);display:flex;align-items:center;justify-content:center;font-size:64px}
+.card-info{position:absolute;left:0;right:0;bottom:0;background:linear-gradient(0deg,rgba(0,0,0,.82),rgba(0,0,0,.15) 70%,transparent);padding:34px 18px 16px;color:#fff}
+.like-first{position:absolute;top:12px;left:12px;background:#fff;color:#ec4899;font-size:12px;font-weight:800;padding:5px 13px;border-radius:999px;box-shadow:0 2px 10px rgba(0,0,0,.25);z-index:2}
+.deck-badge{position:absolute;top:22%;padding:5px 18px;border-radius:12px;font-size:40px;font-weight:900;opacity:0;pointer-events:none;z-index:3}
+.deck-badge.nope{left:6%;color:#ef4444;border:5px solid #ef4444;background:rgba(255,255,255,.8);transform:rotate(-20deg)}
+.deck-badge.like{right:6%;color:#22c55e;border:5px solid #22c55e;background:rgba(255,255,255,.8);transform:rotate(20deg)}
+.deck-actions{display:flex;justify-content:center;align-items:center;gap:44px;padding:20px 0 6px}
+.deck-btn{width:66px;height:66px;border-radius:50%;border:none;font-size:28px;background:#fff;box-shadow:0 4px 16px rgba(0,0,0,.16);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:transform .15s}
+.deck-btn:active{transform:scale(.9)}
+.deck-btn.skip{color:#ef4444}
+.deck-btn.like{width:76px;height:76px;font-size:34px;color:#fff;background:linear-gradient(135deg,#ec4899,#f472b6)}
+.match-overlay{position:fixed;inset:0;z-index:99;background:linear-gradient(160deg,#fff,#fce7f3,#f9a8d4);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:30px;text-align:center;animation:matchIn .35s}
+@keyframes matchIn{from{opacity:0;transform:scale(.9)}to{opacity:1;transform:scale(1)}}
+.match-heart{font-size:86px;animation:heartPulse 1.1s infinite}
+@keyframes heartPulse{0%{transform:scale(1)}45%{transform:scale(1.18)}100%{transform:scale(1)}}
+.deck-empty{text-align:center;padding-top:40px}
 </style>
 </head>
 <body>
@@ -73,12 +96,12 @@ const DATA_API = 'https://api.github.com/repos/' + GITHUB_REPO + '/contents/' + 
 // ============== 状态 ==============
 const State = {
   screen: 'home', isLeader: false,
-  profile: null, groupData: [], seenIds: [],
+  profile: null, groupData: [], seenIds: [], skipped: [],
   groupPassword: null, baiduApiKey: null, baiduSecretKey: null,
   tempPhotos: [], tempContactType: 'douyin'
 };
 const LS_KEYS = {
-  profile:'xqbb_profile', groupData:'xqbb_group', seenIds:'xqbb_seen',
+  profile:'xqbb_profile', groupData:'xqbb_group', seenIds:'xqbb_seen', skipped:'xqbb_skipped',
   lastReset:'xqbb_lastreset', password:'xqbb_password',
   baiduKey:'xqbb_baidu_key', baiduSecret:'xqbb_baidu_secret'
 };
@@ -88,6 +111,8 @@ function loadState() {
     State.profile = JSON.parse(localStorage.getItem(LS_KEYS.profile) || 'null');
     State.groupData = JSON.parse(localStorage.getItem(LS_KEYS.groupData) || '[]');
     State.seenIds = JSON.parse(localStorage.getItem(LS_KEYS.seenIds) || '[]');
+    State.skipped = JSON.parse(localStorage.getItem(LS_KEYS.skipped) || '[]');
+    if (State.profile && !Array.isArray(State.profile.liked)) State.profile.liked = [];
     State.groupPassword = localStorage.getItem(LS_KEYS.password) || null;
     State.baiduApiKey = localStorage.getItem(LS_KEYS.baiduKey) || 'Za16WJNHqXZYpbHq4hwxAY6R';
     State.baiduSecretKey = localStorage.getItem(LS_KEYS.baiduSecret) || 'qOrmHSwWPT5WYt9xuCtFsOkiPlH37rLK';
@@ -262,7 +287,7 @@ function render() {
   bindScreen();
 }
 function renderTabBar() {
-  const items=[['home','🏠','首页'],['recommend','💘','推荐'],['sync','🔄','群数据'],['settings','⚙️','我的']];
+  const items=[['home','🏠','首页'],['recommend','💘','心动'],['sync','🔄','同步'],['settings','⚙️','我的']];
   return `<div class="tab-bar">${items.map(it=>`<div class="tab-item ${State.screen===it[0]?'tab-active':'tab-inactive'}" data-screen="${it[0]}"><span class="tab-icon">${it[1]}</span>${it[2]}</div>`).join('')}</div>`;
 }
 
@@ -270,11 +295,11 @@ function renderTabBar() {
 function renderHome() {
   if(!State.profile) {
     return `<div class="px-5 pt-12">
-      <div class="text-center mb-8"><div class="text-5xl mb-3">💖</div><h1 class="text-2xl font-bold text-gray-800">杭城心动信号</h1><p class="text-sm text-gray-500 mt-2">上传照片 · AI 颜值打分 · 每日匹配</p><div class="inline-block mt-2 text-xs text-pink-500 bg-pink-50 px-2 py-0.5 rounded-full">v4.6 · 心动信号</div></div>
-      <div class="bg-white rounded-2xl p-5 shadow-sm mb-4"><h3 class="font-bold text-gray-800 mb-3">📌 这是什么？</h3><p class="text-sm text-gray-600 leading-relaxed">群里填资料自动同步，AI 给颜值客观打分，每天推荐 5 个符合条件的群友。</p></div>
-      <div class="bg-white rounded-2xl p-5 shadow-sm mb-6"><h3 class="font-bold text-gray-800 mb-3">✨ 怎么用？</h3><ol class="text-sm text-gray-600 leading-relaxed space-y-2"><li>1️⃣ 填资料 + 上传 1 张照片</li><li>2️⃣ AI 系统打分（客观颜值分）</li><li>3️⃣ 自动同步云端，无需手动操作</li><li>4️⃣ 每天看 5 个推荐</li></ol></div>
+      <div class="text-center mb-8"><div class="text-5xl mb-3">💖</div><h1 class="text-2xl font-bold text-gray-800">杭城心动信号</h1><p class="text-sm text-gray-500 mt-2">像刷抖音一样滑卡片 · 互相心动才配对</p><div class="inline-block mt-2 text-xs text-pink-500 bg-pink-50 px-2 py-0.5 rounded-full">v5.0 · 滑卡心动</div></div>
+      <div class="bg-white rounded-2xl p-5 shadow-sm mb-4"><h3 class="font-bold text-gray-800 mb-3">📌 这是什么？</h3><p class="text-sm text-gray-600 leading-relaxed">上传照片由 AI 颜值打分，像刷卡片一样<b>右滑心动、左滑跳过</b>，只有互相心动的人才会配对成功、解锁联系方式。</p></div>
+      <div class="bg-white rounded-2xl p-5 shadow-sm mb-6"><h3 class="font-bold text-gray-800 mb-3">✨ 怎么玩？</h3><ol class="text-sm text-gray-600 leading-relaxed space-y-2"><li>1️⃣ 填资料 + 上传照片 + AI 颜值打分</li><li>2️⃣ 进「💘 心动」页滑卡片：右滑心动，左滑跳过</li><li>3️⃣ 双方互相心动 → 💞 配对成功，解锁联系方式</li><li>4️⃣ 资料自动同步云端，随时可滑</li></ol></div>
       <button class="btn-primary" data-act="go-form">开始填写资料 →</button>
-      <div class="text-center mt-4"><button class="text-xs text-gray-400 underline" data-act="force-reload">页面不是 v4.6？点此强制刷新</button></div>
+      <div class="text-center mt-4"><button class="text-xs text-gray-400 underline" data-act="force-reload">页面不是 v5.0？点此强制刷新</button></div>
     </div>`;
   }
   const p = State.profile;
@@ -294,9 +319,9 @@ function renderHome() {
       <button class="btn-secondary" data-act="copy-me">📤 复制我的资料</button>
     </div>
     <div class="bg-white rounded-2xl p-5 shadow-sm mb-4"><h3 class="font-bold text-gray-800 mb-3">🎯 择偶要求</h3><div class="text-sm text-gray-600 space-y-1"><div>性别：${p.requirement.gender==='male'?'男':'女'}</div><div>年龄：${p.requirement.ageMin} - ${p.requirement.ageMax} 岁</div><div>身高：${p.requirement.heightMin} - ${p.requirement.heightMax} cm</div><div>老家：${p.requirement.hometowns.length?p.requirement.hometowns.join(' / '):'不限'}</div><div>颜值分：≥ ${p.requirement.faceScoreMin} 分</div></div></div>
-    <div class="bg-white rounded-2xl p-5 shadow-sm mb-4"><h3 class="font-bold text-gray-800 mb-2">📊 群数据状态</h3><div class="text-sm text-gray-600">群内已导入 <b class="text-pink-500">${State.groupData.length}</b> 位（含你）</div><div class="text-xs text-gray-400 mt-1">今天已推荐：${State.seenIds.length} 位</div></div>
-    <button class="btn-primary" data-act="go-recommend">💘 查看今日 5 个推荐</button>
-    <div class="text-center mt-4"><button class="text-xs text-gray-400 underline" data-act="force-reload">页面不是 v4.6？点此强制刷新</button></div>
+    <div class="bg-white rounded-2xl p-5 shadow-sm mb-4"><h3 class="font-bold text-gray-800 mb-2">📊 心动信号状态</h3><div class="text-sm text-gray-600">云端群友 <b class="text-pink-500">${State.groupData.length}</b> 位 · 我已心动 <b class="text-pink-500">${(p.liked||[]).length}</b> · 互相心动 <b class="text-pink-500">${myMatched().length}</b></div></div>
+    <button class="btn-primary" data-act="go-recommend">💘 开始心动滑卡</button>
+    <div class="text-center mt-4"><button class="text-xs text-gray-400 underline" data-act="force-reload">页面不是 v5.0？点此强制刷新</button></div>
   </div>`;
 }
 
@@ -360,21 +385,174 @@ function renderResult() {
   </div>`;
 }
 
-// ============== 推荐 ==============
+// ============== 💘 心动滑卡（v5.0 Tinder 风格） ==============
+// 候选池：符合我择偶要求的异性（性别按我要求过滤），已喜欢/已滑过的除外
+function getDeckCandidates() {
+  const me = State.profile; if (!me) return [];
+  const r = me.requirement || {};
+  const used = (me.liked || []).concat(State.skipped || []);
+  return State.groupData.filter(p => {
+    if (p.id === me.id) return false;
+    if (used.includes(p.id)) return false;
+    if (p.gender !== r.gender) return false;
+    if (p.age < r.ageMin || p.age > r.ageMax) return false;
+    if (p.height < r.heightMin || p.height > r.heightMax) return false;
+    if ((p.faceScore || 0) < (r.faceScoreMin || 0)) return false;
+    if (r.hometowns && r.hometowns.length && !r.hometowns.includes(p.hometown)) return false;
+    return true;
+  });
+}
+// 已互相心动的人 = 我心动TA 且 TA心动我
+function myMatched() {
+  const me = State.profile; if (!me) return [];
+  const liked = me.liked || [];
+  return State.groupData.filter(u => u.id !== me.id && liked.includes(u.id) && (u.liked || []).includes(me.id));
+}
+function cardFaceHTML(p) {
+  const firstLike = (p.liked || []).includes(State.profile.id);
+  return `<div style="height:100%;position:relative">
+    ${p.photos && p.photos[0] ? `<img class="card-photo" src="${p.photos[0]}" alt="" onerror="this.outerHTML='<div class=&quot;card-photo-empty&quot;>📷</div>'">` : '<div class="card-photo-empty">📷</div>'}
+    ${firstLike ? `<div class="like-first">💗 ${p.gender === 'female' ? '她' : '他'}先心动了你</div>` : ''}
+    <div class="deck-badge nope">✕</div>
+    <div class="deck-badge like">♥</div>
+    <div class="card-info">
+      <div style="font-size:24px;font-weight:800;text-shadow:0 1px 6px rgba(0,0,0,.4)">${p.nickname} <span style="font-size:15px;font-weight:600">${p.age}岁 · ${p.height}cm</span></div>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:6px"><span style="background:rgba(255,255,255,.92);color:#be185d;font-size:12px;font-weight:800;padding:3px 10px;border-radius:999px">颜值 ${(p.faceScore||0).toFixed(1)}</span><span style="font-size:13px;opacity:.95">📍 ${p.hometown}</span></div>
+    </div>
+  </div>`;
+}
 function renderRecommend() {
-  if(!State.profile) {
-    return `<div class="px-5 pt-12 text-center"><div class="text-5xl mb-3">📋</div><p class="text-gray-500 mb-4">先填写资料才能看推荐</p><button class="btn-primary" data-act="go-form">去填资料 →</button></div>`;
+  if (!State.profile) {
+    return `<div class="px-5 pt-12 text-center"><div class="text-5xl mb-3">💘</div><p class="text-gray-500 mb-4">先填写资料才能开始心动滑卡</p><button class="btn-primary" data-act="go-form">去填资料 →</button></div>`;
   }
-  if(State.groupData.length < 2) {
-    return `<div class="px-5 pt-12 text-center"><div class="text-5xl mb-3">🫂</div><p class="text-gray-700 font-medium mb-2">群里还没有其他人的资料</p><p class="text-sm text-gray-500 mb-4">先去群里分享你的资料<br>再让群主合并后导入</p><button class="btn-secondary" data-act="goto-sync">去导入群数据 →</button></div>`;
+  if (State.groupData.length < 2) {
+    return `<div class="px-5 pt-12 text-center"><div class="text-5xl mb-3">🫂</div><p class="text-gray-700 font-medium mb-2">云端还没有其他人</p><p class="text-sm text-gray-500 mb-4">邀请更多朋友加入后，就能开始滑卡匹配</p></div>`;
   }
-  const recs = getRecommendations();
-  if(recs.length===0) {
-    return `<div class="px-5 pt-12 text-center"><div class="text-5xl mb-3">😢</div><p class="text-gray-700 font-medium mb-2">今天符合要求的都被推荐过啦</p><p class="text-sm text-gray-500 mb-4">明天 0 点会重置已推荐池</p><button class="btn-secondary" data-act="goto-settings">放宽要求 →</button></div>`;
+  const matched = myMatched();
+  const cand = getDeckCandidates();
+  if (!cand.length) {
+    const matchRows = matched.length ? matched.map(p => `<div class="bg-white rounded-2xl p-3 shadow-sm mb-3 flex items-center gap-3" data-act="view-profile" data-id="${p.id}" style="cursor:pointer">
+        <div class="w-12 h-14 rounded-lg overflow-hidden bg-pink-50 flex-shrink-0">${p.photos&&p.photos[0]?`<img src="${p.photos[0]}" class="w-full h-full object-cover">`:''}</div>
+        <div class="flex-1 text-left"><div class="font-bold text-gray-800">${p.nickname} <span class="badge" style="background:#fce7f3;color:#be185d">颜值 ${(p.faceScore||0).toFixed(1)}</span></div><div class="text-xs text-pink-500">💞 你们互相心动了</div></div>
+        <div style="color:#9ca3af">›</div></div>`).join('') : '';
+    return `<div class="px-5 pt-10 deck-empty">
+      <div style="font-size:60px;margin-bottom:10px">${matched.length ? '💞' : '🌵'}</div>
+      <div class="text-lg font-bold text-gray-800 mb-1">${matched.length ? '你们互相心动啦！' : '今天的心动卡片都看完啦'}</div>
+      <div class="text-sm text-gray-500 mb-2">${matched.length ? '互相心动即可解锁对方联系方式' : '过一会儿再来看看，或点下面刷新'}</div>
+      ${matchRows}
+      <div style="height:14px"></div>
+      <button class="btn-secondary" data-act="refresh-data">🔄 刷新云端</button>
+    </div>`;
   }
-  return `<div class="px-5 pt-6"><div class="flex items-center justify-between mb-4"><h2 class="text-lg font-bold text-gray-800">💘 今日 5 个推荐</h2><span class="text-xs text-gray-400">已推荐 ${State.seenIds.length}</span></div>
-    <div class="space-y-3">${recs.map(p=>`<div class="rec-card p-4" data-act="view-profile" data-id="${p.id}" style="cursor:pointer"><div class="flex gap-3"><div class="w-20 h-24 rounded-lg overflow-hidden bg-pink-50 flex-shrink-0">${p.photos&&p.photos[0]?`<img src="${p.photos[0]}" class="w-full h-full object-cover" onerror="this.style.display='none'">`:'<div class="w-full h-full flex items-center justify-center text-pink-300 text-2xl">📷</div>'}</div><div class="flex-1 min-w-0"><div class="flex items-center gap-2 mb-1"><div class="font-bold text-gray-800">${p.nickname}</div><span class="badge bg-pink-100 text-pink-600">颜值 ${(p.faceScore||0).toFixed(1)}</span></div><div class="text-sm text-gray-500 mb-1">${p.gender==='female'?'♀':'♂'} · ${p.age}岁 · ${p.height}cm</div><div class="text-xs text-gray-400">📍 ${p.hometown}</div><div class="text-xs text-pink-400 mt-1">👆 点开看照片和联系方式</div></div><div class="flex items-center text-2xl text-gray-300">›</div></div></div>`).join('')}</div>
-    <div class="mt-4 text-center text-xs text-gray-400">每天 0 点重置 · 换一批新推荐</div></div>`;
+  const tops = cand.slice(0, 3);
+  const cardLayers = tops.map((p, i) => {
+    const cls = i === 0 ? 'top' : (i === 1 ? 'back1' : 'back2');
+    return `<div class="swipe-card ${cls}" data-cid="${p.id}" style="z-index:${10 - i}">${cardFaceHTML(p)}</div>`;
+  }).join('');
+  return `<div class="px-4 pt-4 pb-2">
+    <div class="flex items-center justify-between px-1 mb-3">
+      <div><div class="text-lg font-bold text-gray-800">💘 心动滑卡</div><div class="text-[11px] text-gray-400">右滑心动 · 左滑跳过 · 互相心动才配对</div></div>
+      ${matched.length ? `<button class="badge" style="background:#ec4899;color:#fff;font-size:13px;padding:6px 14px;border:none;cursor:pointer" data-act="show-matched">💞 互相心动 ${matched.length}</button>` : ''}
+    </div>
+    <div class="deck-wrap" id="deck-wrap">${cardLayers}</div>
+    <div class="deck-actions">
+      <button class="deck-btn skip" data-act="skip-card">✕</button>
+      <button class="deck-btn like" data-act="like-card">♥</button>
+    </div>
+  </div>`;
+}
+// —— 滑卡交互：拖拽顶层卡 ——
+function bindDeckDrag() {
+  const top = document.querySelector('.swipe-card.top');
+  if (!top) return;
+  const badgesNope = top.querySelector('.deck-badge.nope');
+  const badgesLike = top.querySelector('.deck-badge.like');
+  let sx = 0, sy = 0, dx = 0, dy = 0, active = false;
+  const onMove = e => {
+    if (!active) return;
+    dx = e.clientX - sx; dy = e.clientY - sy;
+    top.style.transform = `translate(${dx}px, ${dy}px) rotate(${dx / 22}deg)`;
+    if (badgesNope) badgesNope.style.opacity = dx < -40 ? '1' : '0';
+    if (badgesLike) badgesLike.style.opacity = dx > 40 ? '1' : '0';
+  };
+  const onUp = () => {
+    if (!active) return; active = false;
+    const id = top.dataset.cid;
+    if (dx > 100) { flyTop('like', id); }
+    else if (dx < -100) { flyTop('skip', id); }
+    else { top.style.transition = 'transform .3s'; top.style.transform = ''; if (badgesNope) badgesNope.style.opacity = '0'; if (badgesLike) badgesLike.style.opacity = '0'; }
+  };
+  top.addEventListener('pointerdown', e => {
+    if (e.target.closest && e.target.closest('button')) return; // 卡上有按钮时不拖卡
+    active = true; sx = e.clientX; sy = e.clientY; dx = 0; dy = 0;
+    top.style.transition = 'none';
+    try { top.setPointerCapture(e.pointerId); } catch (err) {}
+  });
+  top.addEventListener('pointermove', onMove);
+  top.addEventListener('pointerup', onUp);
+  top.addEventListener('pointercancel', onUp);
+}
+function flyTop(action, id) {
+  const top = document.querySelector('.swipe-card.top');
+  if (!top) return;
+  top.style.transition = 'transform .4s ease';
+  top.style.transform = action === 'like' ? 'translate(130%, -40px) rotate(24deg)' : 'translate(-130%, -40px) rotate(-24deg)';
+  top.style.pointerEvents = 'none';
+  setTimeout(() => { if (action === 'like') actLike(id); else actSkip(id); }, 380);
+}
+function actLike(id) {
+  const me = State.profile; if (!me) return;
+  const liked = me.liked || [];
+  if (liked.includes(id)) { render(); return; }
+  me.liked = [...liked, id];
+  saveProfile();
+  const other = State.groupData.find(x => x.id === id);
+  const isMatch = other && (other.liked || []).includes(me.id);
+  render();
+  if (isMatch && other) { showMatchOverlay(other); return; }
+  showToast('💗 已心动 · 等 TA 也心动你');
+  uploadMyProfile(); // 静默同步 liked 到云端（内含防覆盖保护）
+}
+function actSkip(id) {
+  State.skipped = [...(State.skipped || []), id];
+  try { localStorage.setItem(LS_KEYS.skipped, JSON.stringify(State.skipped)); } catch (e) {}
+  render();
+}
+// —— 💞 配对成功全屏庆祝 ——
+function showMatchOverlay(p) {
+  const contactBox = p.contact && p.contact.account
+    ? `<div style="background:#fff;border-radius:18px;padding:16px 20px;width:min(90vw,360px);margin:0 auto 18px"><div style="font-size:13px;color:#ec4899;margin-bottom:6px">📱 ${p.nickname} 的${contactLabel(p.contact.type)}</div><div style="font-size:22px;font-weight:800;color:#1f2937;word-break:break-all">${p.contact.account}</div><button class="btn-ghost" style="margin-top:12px;padding:6px" id="m-copy">复制账号</button></div>`
+    : '';
+  const ov = document.createElement('div');
+  ov.className = 'match-overlay';
+  ov.innerHTML = `<div class="match-heart">💘</div>
+    <div style="font-size:30px;font-weight:900;color:#be185d;margin:10px 0 4px">配对成功！</div>
+    <div style="color:#6b7280;margin-bottom:22px">你和 <b>${p.nickname}</b> 互相心动了</div>
+    <div style="background:rgba(255,255,255,.8);border-radius:999px;padding:8px 22px;margin-bottom:22px;font-size:13px;color:#9d174d">🎯 你们也互相符合对方的择偶要求</div>
+    ${contactBox}
+    <button class="btn-primary" style="width:min(90vw,360px);margin-top:6px" id="m-ok">太棒了，继续滑</button>`;
+  document.body.appendChild(ov);
+  const close = () => ov.remove();
+  ov.querySelector('#m-ok').onclick = close;
+  const cp = ov.querySelector('#m-copy');
+  if (cp) cp.onclick = () => copyToClipboard(p.contact.account);
+}
+// —— 💞 互相心动列表弹层 ——
+function showMatchedModal() {
+  const list = myMatched();
+  if (!list.length) { showToast('还没有互相心动的人，先去滑卡吧'); return; }
+  const rows = list.map(p => `<div class="flex items-center gap-3 p-2 rounded-xl hover:bg-pink-50" style="cursor:pointer" data-mid="${p.id}">
+      <div class="w-12 h-14 rounded-lg overflow-hidden bg-pink-50 flex-shrink-0">${p.photos&&p.photos[0]?`<img src="${p.photos[0]}" class="w-full h-full object-cover">`:''}</div>
+      <div class="flex-1 text-left"><div class="font-bold text-gray-800">${p.nickname}</div><div class="text-xs text-gray-400">${p.gender==='female'?'♀':'♂'} ${p.age}岁 · ${p.height}cm · ${p.hometown}</div></div>
+      <div class="text-xs text-pink-500 font-bold">看详情 ›</div></div>`).join('');
+  showModal('💞 互相心动的人', rows, '关闭', () => {
+    const first = document.querySelector('[data-mid]');
+    if (first) {
+      const id = first.dataset.mid;
+      const p = State.groupData.find(x => x.id === id);
+      if (p) openProfileModal(p);
+    }
+  });
 }
 
 // ============== 群数据同步（普通用户） ==============
@@ -398,7 +576,7 @@ function renderSettings() {
     <div class="bg-white rounded-2xl p-5 shadow-sm mb-4"><h3 class="font-bold text-gray-800 mb-3">📝 资料编辑</h3><button class="btn-secondary" data-act="go-form">编辑我的资料</button></div>
     <div class="bg-white rounded-2xl p-5 shadow-sm mb-4"><h3 class="font-bold text-gray-800 mb-2">🔑 跨设备同步</h3><p class="text-xs text-gray-500 mb-3">换手机/换浏览器时，用恢复码一键找回你的资料。</p>${p?`<div class="bg-pink-50 rounded-xl p-3 text-center mb-3"><div class="text-xs text-pink-500 mb-1">我的恢复码</div><div class="font-mono font-bold text-gray-800 text-lg select-all">${p.id}</div></div><div class="grid grid-cols-2 gap-2"><button class="btn-ghost" data-act="copy-code">复制恢复码</button><button class="btn-ghost" data-act="restore-code">用恢复码找回</button></div>`:`<button class="btn-ghost w-full" data-act="restore-code">用恢复码找回资料</button>`}</div>
     <div class="bg-white rounded-2xl p-5 shadow-sm mb-4"><h3 class="font-bold text-gray-800 mb-3">📦 我的数据</h3><button class="btn-ghost w-full" data-act="copy-me">导出我的资料（发给群主合并）</button></div>
-    <div class="text-center mt-6"><button class="text-xs text-gray-300 underline" data-act="leader-entry">群主管理入口</button><div class="text-xs text-gray-400 mt-6">杭城心动信号 v4.6 · 大容量云端</div></div>
+    <div class="text-center mt-6"><button class="text-xs text-gray-300 underline" data-act="leader-entry">群主管理入口</button><div class="text-xs text-gray-400 mt-6">杭城心动信号 v5.0 · 大容量云端</div></div>
   </div>`;
 }
 
@@ -424,6 +602,7 @@ function bindScreen() {
       else { State.screen = target; render(); }
     };
   });
+  bindDeckDrag();
   document.body.onclick = onClick;
 }
 function goRecommend() {
@@ -441,6 +620,9 @@ function onClick(e) {
     case 'go-home': State.screen='home'; break;
     case 'go-form': State.tempPhotos = State.profile?.photos ? [...State.profile.photos] : []; State.screen='form'; break;
     case 'go-recommend': goRecommend(); return;
+    case 'like-card': { const t2 = document.querySelector('.swipe-card.top'); if (t2) flyTop('like', t2.dataset.cid); return; }
+    case 'skip-card': { const t3 = document.querySelector('.swipe-card.top'); if (t3) flyTop('skip', t3.dataset.cid); return; }
+    case 'show-matched': showMatchedModal(); return;
     case 'goto-sync': State.screen='sync'; break;
     case 'goto-settings': State.screen='settings'; break;
     case 'back': State.screen='home'; break;
