@@ -66,6 +66,8 @@ const GITHUB_TOKEN = 'ghp_' + 'WfeOb9EYpFi4SpauyVeuwfNwD31MIX3k6ycf';  // 分段
 const DATA_FILE = 'data/group.json';
 const DATA_RAW = 'https://raw.githubusercontent.com/' + GITHUB_REPO + '/main/' + DATA_FILE;
 const DATA_CDN = 'https://cdn.jsdelivr.net/gh/' + GITHUB_REPO + '@main/' + DATA_FILE;
+const DATA_PROXY = 'https://ghproxy.net/' + DATA_RAW;                          // 国内镜像兜底
+const DATA_GH = 'https://huangkanyang-maker.github.io/xiangqinbangbang/' + DATA_FILE; // Pages 直连兜底
 const DATA_API = 'https://api.github.com/repos/' + GITHUB_REPO + '/contents/' + DATA_FILE;
 
 // ============== 状态 ==============
@@ -622,8 +624,8 @@ function base64Encode(str) {
 }
 
 async function fetchGroupData() {
-  // 先 raw（实时）再 CDN（稳定兜底）
-  const urls = [DATA_RAW, DATA_CDN];
+  // 多通道：raw（实时）→ jsdelivr → ghproxy 国内镜像 → GitHub Pages，谁通谁用
+  const urls = [DATA_RAW, DATA_CDN, DATA_PROXY, DATA_GH];
   for (const u of urls) {
     try {
       const res = await fetch(u, { cache: 'no-store' });
@@ -691,10 +693,14 @@ async function uploadMyProfile() {
     // 上传前去除冗余的本地字段（photoDataUrl 与 photos[0] 重复，不重复传云端）
     const profileToUpload = Object.assign({}, State.profile);
     delete profileToUpload.photoDataUrl;
-    // 先拉最新 → 合并自己 → 写回（避免覆盖他人数据）
-    await fetchGroupData();
-    let users = State.groupData;
-    if (!Array.isArray(users)) users = [];
+    // ⚠️ 防覆盖保护：必须先成功拉到云端最新列表，才允许合并写回；
+    //    拉取失败（断网/被墙）直接失败返回，绝不拿旧缓存或空列表去覆盖云端
+    const latest = await fetchGroupData();
+    if (!Array.isArray(latest)) {
+      console.error('上传中止：拉不到云端最新列表，为避免覆盖他人数据已停止');
+      return false;
+    }
+    const users = latest.map(p => p);
     const idx = users.findIndex(p => p.id === profileToUpload.id);
     if (idx >= 0) users[idx] = profileToUpload; else users.push(profileToUpload);
     State.groupData = users;
