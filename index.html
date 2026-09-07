@@ -43,7 +43,7 @@
   .tag-chip.selected { border-color:var(--primary); background:var(--primary-light); color:var(--primary-dark); }
   .spinner { display:inline-block; width:18px; height:18px; border:2px solid #fff; border-top-color:transparent; border-radius:50%; animation:spin .7s linear infinite; }
   @keyframes spin { to{transform:rotate(360deg);} }
-/* ===== v5.0 心动滑卡（Tinder 风格） ===== */
+/* ===== v5.1 心动滑卡（Tinder 风格） ===== */
 .deck-wrap{position:relative;width:min(94vw,400px);height:min(68vh,600px);min-height:420px;margin:0 auto}
 .swipe-card{position:absolute;inset:0;margin:auto;width:100%;height:100%;border-radius:26px;overflow:hidden;background:#fff;box-shadow:0 12px 34px rgba(0,0,0,.2);user-select:none;touch-action:none;transform-origin:50% 100%}
 .swipe-card.back1{transform:scale(.94) translateY(12px);box-shadow:0 6px 18px rgba(0,0,0,.12)}
@@ -295,11 +295,11 @@ function renderTabBar() {
 function renderHome() {
   if(!State.profile) {
     return `<div class="px-5 pt-12">
-      <div class="text-center mb-8"><div class="text-5xl mb-3">💖</div><h1 class="text-2xl font-bold text-gray-800">杭城心动信号</h1><p class="text-sm text-gray-500 mt-2">像刷抖音一样滑卡片 · 互相心动才配对</p><div class="inline-block mt-2 text-xs text-pink-500 bg-pink-50 px-2 py-0.5 rounded-full">v5.0 · 滑卡心动</div></div>
-      <div class="bg-white rounded-2xl p-5 shadow-sm mb-4"><h3 class="font-bold text-gray-800 mb-3">📌 这是什么？</h3><p class="text-sm text-gray-600 leading-relaxed">上传照片由 AI 颜值打分，像刷卡片一样<b>右滑心动、左滑跳过</b>，只有互相心动的人才会配对成功、解锁联系方式。</p></div>
-      <div class="bg-white rounded-2xl p-5 shadow-sm mb-6"><h3 class="font-bold text-gray-800 mb-3">✨ 怎么玩？</h3><ol class="text-sm text-gray-600 leading-relaxed space-y-2"><li>1️⃣ 填资料 + 上传照片 + AI 颜值打分</li><li>2️⃣ 进「💘 心动」页滑卡片：右滑心动，左滑跳过</li><li>3️⃣ 双方互相心动 → 💞 配对成功，解锁联系方式</li><li>4️⃣ 资料自动同步云端，随时可滑</li></ol></div>
+      <div class="text-center mb-8"><div class="text-5xl mb-3">💖</div><h1 class="text-2xl font-bold text-gray-800">杭城心动信号</h1><p class="text-sm text-gray-500 mt-2">像刷抖音一样滑卡片 · 互相心动才配对</p><div class="inline-block mt-2 text-xs text-pink-500 bg-pink-50 px-2 py-0.5 rounded-full">v5.1 · 滑卡心动</div></div>
+      <div class="bg-white rounded-2xl p-5 shadow-sm mb-4"><h3 class="font-bold text-gray-800 mb-3">📌 这是什么？</h3><p class="text-sm text-gray-600 leading-relaxed">每天最多 3 位<b>双向匹配</b>的候选人（你符合 TA、TA 也符合你），右滑 ♥ 喜欢、左滑 ✕ 不喜欢，双方都喜欢才配对、解锁联系方式。没点过的卡片<b>会一直保留</b>。</p></div>
+      <div class="bg-white rounded-2xl p-5 shadow-sm mb-6"><h3 class="font-bold text-gray-800 mb-3">✨ 怎么玩？</h3><ol class="text-sm text-gray-600 leading-relaxed space-y-2"><li>1️⃣ 填资料 + 上传照片 + AI 颜值打分</li><li>2️⃣ 进「💘 心动」：每天 3 张候选卡，♥ 喜欢 / ✕ 不喜欢</li><li>3️⃣ 你喜欢的 TA 也喜欢了你 → 💞 配对成功，解锁联系方式</li><li>4️⃣ 配对成功后，来小程序还能直接发私信聊天</li></ol></div>
       <button class="btn-primary" data-act="go-form">开始填写资料 →</button>
-      <div class="text-center mt-4"><button class="text-xs text-gray-400 underline" data-act="force-reload">页面不是 v5.0？点此强制刷新</button></div>
+      <div class="text-center mt-4"><button class="text-xs text-gray-400 underline" data-act="force-reload">页面不是 v5.1？点此强制刷新</button></div>
     </div>`;
   }
   const p = State.profile;
@@ -321,7 +321,7 @@ function renderHome() {
     <div class="bg-white rounded-2xl p-5 shadow-sm mb-4"><h3 class="font-bold text-gray-800 mb-3">🎯 择偶要求</h3><div class="text-sm text-gray-600 space-y-1"><div>性别：${p.requirement.gender==='male'?'男':'女'}</div><div>年龄：${p.requirement.ageMin} - ${p.requirement.ageMax} 岁</div><div>身高：${p.requirement.heightMin} - ${p.requirement.heightMax} cm</div><div>老家：${p.requirement.hometowns.length?p.requirement.hometowns.join(' / '):'不限'}</div><div>颜值分：≥ ${p.requirement.faceScoreMin} 分</div></div></div>
     <div class="bg-white rounded-2xl p-5 shadow-sm mb-4"><h3 class="font-bold text-gray-800 mb-2">📊 心动信号状态</h3><div class="text-sm text-gray-600">云端群友 <b class="text-pink-500">${State.groupData.length}</b> 位 · 我已心动 <b class="text-pink-500">${(p.liked||[]).length}</b> · 互相心动 <b class="text-pink-500">${myMatched().length}</b></div></div>
     <button class="btn-primary" data-act="go-recommend">💘 开始心动滑卡</button>
-    <div class="text-center mt-4"><button class="text-xs text-gray-400 underline" data-act="force-reload">页面不是 v5.0？点此强制刷新</button></div>
+    <div class="text-center mt-4"><button class="text-xs text-gray-400 underline" data-act="force-reload">页面不是 v5.1？点此强制刷新</button></div>
   </div>`;
 }
 
@@ -385,21 +385,15 @@ function renderResult() {
   </div>`;
 }
 
-// ============== 💘 心动滑卡（v5.0 Tinder 风格） ==============
-// 候选池：符合我择偶要求的异性（性别按我要求过滤），已喜欢/已滑过的除外
+// ============== 💘 心动滑卡（v5.1 Tinder 风格） ==============
+// 候选池 = 双方择偶条件互相对上（双向匹配 isMutualMatch）的人；已喜欢♥/已不喜欢✕ 的不再出现
 function getDeckCandidates() {
   const me = State.profile; if (!me) return [];
-  const r = me.requirement || {};
   const used = (me.liked || []).concat(State.skipped || []);
   return State.groupData.filter(p => {
     if (p.id === me.id) return false;
     if (used.includes(p.id)) return false;
-    if (p.gender !== r.gender) return false;
-    if (p.age < r.ageMin || p.age > r.ageMax) return false;
-    if (p.height < r.heightMin || p.height > r.heightMax) return false;
-    if ((p.faceScore || 0) < (r.faceScoreMin || 0)) return false;
-    if (r.hometowns && r.hometowns.length && !r.hometowns.includes(p.hometown)) return false;
-    return true;
+    return isMutualMatch(me, p); // 我的要求 ⊇ 对方 且 对方要求 ⊇ 我
   });
 }
 // 已互相心动的人 = 我心动TA 且 TA心动我
@@ -433,32 +427,33 @@ function renderRecommend() {
   if (!cand.length) {
     const matchRows = matched.length ? matched.map(p => `<div class="bg-white rounded-2xl p-3 shadow-sm mb-3 flex items-center gap-3" data-act="view-profile" data-id="${p.id}" style="cursor:pointer">
         <div class="w-12 h-14 rounded-lg overflow-hidden bg-pink-50 flex-shrink-0">${p.photos&&p.photos[0]?`<img src="${p.photos[0]}" class="w-full h-full object-cover">`:''}</div>
-        <div class="flex-1 text-left"><div class="font-bold text-gray-800">${p.nickname} <span class="badge" style="background:#fce7f3;color:#be185d">颜值 ${(p.faceScore||0).toFixed(1)}</span></div><div class="text-xs text-pink-500">💞 你们互相心动了</div></div>
+        <div class="flex-1 text-left"><div class="font-bold text-gray-800">${p.nickname} <span class="badge" style="background:#fce7f3;color:#be185d">颜值 ${(p.faceScore||0).toFixed(1)}</span></div><div class="text-xs text-pink-500">💞 你们互相心动了，点开看联系方式</div></div>
         <div style="color:#9ca3af">›</div></div>`).join('') : '';
     return `<div class="px-5 pt-10 deck-empty">
-      <div style="font-size:60px;margin-bottom:10px">${matched.length ? '💞' : '🌵'}</div>
-      <div class="text-lg font-bold text-gray-800 mb-1">${matched.length ? '你们互相心动啦！' : '今天的心动卡片都看完啦'}</div>
-      <div class="text-sm text-gray-500 mb-2">${matched.length ? '互相心动即可解锁对方联系方式' : '过一会儿再来看看，或点下面刷新'}</div>
+      <div style="font-size:60px;margin-bottom:10px">${matched.length ? '💞' : '✨'}</div>
+      <div class="text-lg font-bold text-gray-800 mb-1">${matched.length ? '你们互相心动啦！' : '今日的 3 位候选都看完啦'}</div>
+      <div class="text-sm text-gray-500 mb-4">${matched.length ? '互相心动的人已解锁，点开就能看到联系方式' : '每天最多推荐 3 位双向匹配的人；新增成员或明天会再来新候选'}</div>
       ${matchRows}
       <div style="height:14px"></div>
-      <button class="btn-secondary" data-act="refresh-data">🔄 刷新云端</button>
+      <button class="btn-secondary" data-act="refresh-data">🔄 刷新看看有没有新人</button>
     </div>`;
   }
-  const tops = cand.slice(0, 3);
+  const tops = cand.slice(0, 3); // 每天固定一批 3 人，未处理的不消失；处理完换下一批
   const cardLayers = tops.map((p, i) => {
     const cls = i === 0 ? 'top' : (i === 1 ? 'back1' : 'back2');
     return `<div class="swipe-card ${cls}" data-cid="${p.id}" style="z-index:${10 - i}">${cardFaceHTML(p)}</div>`;
   }).join('');
   return `<div class="px-4 pt-4 pb-2">
     <div class="flex items-center justify-between px-1 mb-3">
-      <div><div class="text-lg font-bold text-gray-800">💘 心动滑卡</div><div class="text-[11px] text-gray-400">右滑心动 · 左滑跳过 · 互相心动才配对</div></div>
-      ${matched.length ? `<button class="badge" style="background:#ec4899;color:#fff;font-size:13px;padding:6px 14px;border:none;cursor:pointer" data-act="show-matched">💞 互相心动 ${matched.length}</button>` : ''}
+      <div><div class="text-lg font-bold text-gray-800">💘 今日心动 · 最多 3 人</div><div class="text-[11px] text-gray-400">右滑 ♥ 喜欢 · 左滑 ✕ 不喜欢 · 双方喜欢才配对</div></div>
+      <div class="text-center"><div style="font-size:18px;font-weight:800;color:#ec4899">${tops.length}<span style="font-size:12px;color:#9ca3af">/3 待处理</span></div><div style="font-size:10px;color:#bbb">没点 ♥/✕ 不会消失</div></div>
     </div>
     <div class="deck-wrap" id="deck-wrap">${cardLayers}</div>
     <div class="deck-actions">
       <button class="deck-btn skip" data-act="skip-card">✕</button>
       <button class="deck-btn like" data-act="like-card">♥</button>
     </div>
+    ${matched.length ? `<div class="text-center mt-2"><button class="badge" style="background:#ec4899;color:#fff;font-size:13px;padding:6px 14px;border:none;cursor:pointer" data-act="show-matched">💞 已互相心动 ${matched.length} 位 · 查看</button></div>` : ''}
   </div>`;
 }
 // —— 滑卡交互：拖拽顶层卡 ——
@@ -576,7 +571,7 @@ function renderSettings() {
     <div class="bg-white rounded-2xl p-5 shadow-sm mb-4"><h3 class="font-bold text-gray-800 mb-3">📝 资料编辑</h3><button class="btn-secondary" data-act="go-form">编辑我的资料</button></div>
     <div class="bg-white rounded-2xl p-5 shadow-sm mb-4"><h3 class="font-bold text-gray-800 mb-2">🔑 跨设备同步</h3><p class="text-xs text-gray-500 mb-3">换手机/换浏览器时，用恢复码一键找回你的资料。</p>${p?`<div class="bg-pink-50 rounded-xl p-3 text-center mb-3"><div class="text-xs text-pink-500 mb-1">我的恢复码</div><div class="font-mono font-bold text-gray-800 text-lg select-all">${p.id}</div></div><div class="grid grid-cols-2 gap-2"><button class="btn-ghost" data-act="copy-code">复制恢复码</button><button class="btn-ghost" data-act="restore-code">用恢复码找回</button></div>`:`<button class="btn-ghost w-full" data-act="restore-code">用恢复码找回资料</button>`}</div>
     <div class="bg-white rounded-2xl p-5 shadow-sm mb-4"><h3 class="font-bold text-gray-800 mb-3">📦 我的数据</h3><button class="btn-ghost w-full" data-act="copy-me">导出我的资料（发给群主合并）</button></div>
-    <div class="text-center mt-6"><button class="text-xs text-gray-300 underline" data-act="leader-entry">群主管理入口</button><div class="text-xs text-gray-400 mt-6">杭城心动信号 v5.0 · 大容量云端</div></div>
+    <div class="text-center mt-6"><button class="text-xs text-gray-300 underline" data-act="leader-entry">群主管理入口</button><div class="text-xs text-gray-400 mt-6">杭城心动信号 v5.1 · 大容量云端</div></div>
   </div>`;
 }
 
