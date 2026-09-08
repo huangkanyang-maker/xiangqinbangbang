@@ -43,7 +43,7 @@
   .tag-chip.selected { border-color:var(--primary); background:var(--primary-light); color:var(--primary-dark); }
   .spinner { display:inline-block; width:18px; height:18px; border:2px solid #fff; border-top-color:transparent; border-radius:50%; animation:spin .7s linear infinite; }
   @keyframes spin { to{transform:rotate(360deg);} }
-/* ===== v5.2 心动滑卡（Tinder 风格） ===== */
+/* ===== v5.3 心动滑卡（Tinder 风格） ===== */
 .deck-wrap{position:relative;width:min(94vw,400px);height:min(68vh,600px);min-height:420px;margin:0 auto}
 .swipe-card{position:absolute;inset:0;margin:auto;width:100%;height:100%;border-radius:26px;overflow:hidden;background:#fff;box-shadow:0 12px 34px rgba(0,0,0,.2);user-select:none;touch-action:none;transform-origin:50% 100%}
 .swipe-card.back1{transform:scale(.94) translateY(12px);box-shadow:0 6px 18px rgba(0,0,0,.12)}
@@ -222,6 +222,123 @@ async function detectFace(base64DataUrl) {
   throw new Error('请求过于频繁，请稍后再试');
 }
 
+// ============== 🪪 轻实名认证（配对/私信前） ==============
+function isVerified(p) { return !!(p && p.verify && p.verify.ok); }
+function isValidIdCard(id) {
+  if (!/^\d{17}[\dXx]$/.test(id || '')) return false;
+  const w = [7,9,10,5,8,4,2,1,6,3,7,9,10,5,8,4,2];
+  const map = ['1','0','X','9','8','7','6','5','4','3','2'];
+  let sum = 0;
+  for (let i = 0; i < 17; i++) sum += parseInt(id[i]) * w[i];
+  return map[sum % 11] === id[17].toUpperCase();
+}
+function isValidName(n) { return /^[\u4e00-\u9fa5·]{2,10}$/.test((n||'').trim()); }
+function isValidPhone(p) { return /^1[3-9]\d{9}$/.test((p||'').trim()); }
+function maskStr(s, keep) { return s ? (s.slice(0, keep) + '****' + (s.length > keep + 4 ? s.slice(-4) : '')) : ''; }
+function maskName(n) { return n ? (n[0] + '**') : ''; }
+function maskPhone(p) { return p ? (p.slice(0,3) + '****' + p.slice(7)) : ''; }
+// 身份证：保留前6+后4（地区+校验）
+function maskId(id) { return id ? (id.slice(0,6) + '********' + id.slice(-4)) : ''; }
+
+async function baiduFaceMatch(selfieDataUrl, avatarDataUrl) {
+  const url = `https://aip.baidubce.com/rest/2.0/face/v3/match?access_token=${BAIDU_ACCESS_TOKEN}`;
+  const clean = d => d.replace(/^data:image\/\w+;base64,/, '');
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ image1: clean(selfieDataUrl), image2: clean(avatarDataUrl), image_type: 'BASE64' })
+    });
+    const data = await res.json();
+    if (data.error_code === 0 && data.result) return data.result.score; // 0-100
+    if (data.error_code === 18) { await new Promise(r => setTimeout(r, 1500)); continue; }
+    if (data.error_code === 110 || data.error_code === 111) throw new Error('AI 服务凭证已过期，请联系群主更新');
+    throw new Error(data.error_msg || '人脸比对失败');
+  }
+  throw new Error('请求过于频繁，请稍后再试');
+}
+
+function renderVerify() {
+  const p = State.profile;
+  if (!p) return renderHome();
+  const already = isVerified(p) && p.verify;
+  const avatar = p.photos && p.photos[0];
+  return `<div class="px-5 pt-6">
+    <div class="flex items-center mb-5"><button class="text-2xl text-gray-500" data-act="back">←</button><h2 class="text-lg font-bold text-gray-800 ml-3">🪪 实名认证</h2></div>
+    <div class="bg-white rounded-2xl p-5 shadow-sm mb-4">
+      <div class="flex items-center gap-3 mb-3">
+        <div style="font-size:34px">${already ? '✅' : '🪪'}</div>
+        <div><div class="font-bold text-gray-800">${already ? '已完成实名认证' : '为什么需要实名？'}</div>
+        <div class="text-xs text-gray-500">相亲严肃场，互相心动配对 & 私信前需实名，杜绝乱填乱骗</div></div>
+      </div>
+      ${already ? `<div class="bg-green-50 rounded-xl p-3 text-sm text-green-800 mb-2">姓名 ${p.verify.nameMask} · 身份证 ${p.verify.idMask}<br>手机 ${p.verify.phoneMask} · 认证时间 ${new Date(p.verify.ts).toLocaleDateString()}</div>` : ''}
+      <div class="text-xs text-gray-400">提示：真实姓名与身份证号仅用于身份标注，云端只存打码信息，不会泄露。</div>
+    </div>
+    ${already ? '' : `
+    <div class="bg-white rounded-2xl p-5 shadow-sm mb-4">
+      <div class="mb-4"><label class="label-text">手机号（用于联系核实）</label><input class="input-field" id="v-phone" placeholder="11 位手机号" maxlength="11"></div>
+      <div class="grid grid-cols-1 gap-3 mb-4"><div><label class="label-text">真实姓名</label><input class="input-field" id="v-name" placeholder="与身份证一致" maxlength="10"></div><div><label class="label-text">身份证号</label><input class="input-field" id="v-id" placeholder="18 位身份证号" maxlength="18"></div></div>
+      <div class="mb-2"><label class="label-text">自拍一张正脸照（用于与资料照片比对为同一人）</label>
+        <div id="v-selfie" style="display:flex;gap:12px;align-items:center">
+          <label for="verify-photo-input" style="cursor:pointer"><div id="v-selfie-box" class="w-28 h-32 rounded-xl bg-pink-50 flex items-center justify-center text-pink-300 text-3xl" style="width:112px;height:128px">🤳</div></label>
+          <div class="text-xs text-gray-400" style="max-width:180px">拍一张现在的正脸照，光线充足、不戴帽子口罩</div>
+        </div>
+        <input type="file" id="verify-photo-input" accept="image/*" style="display:none">
+        <div id="v-selfie-preview"></div>
+      </div>
+    </div>
+    <button class="btn-primary mb-3" data-act="do-verify">🪪 提交实名认证</button>`}
+    <button class="btn-ghost w-full" data-act="back">返回</button>
+    ${avatar ? '' : '<div class="text-xs text-red-400 mt-2">⚠️ 资料还没上传照片，请先到「编辑资料」上传一张正脸照再实名</div>'}
+  </div>`;
+}
+
+let verifySelfieDataUrl = null;
+function bindVerifyPhoto() {
+  const input = document.getElementById('verify-photo-input');
+  if (input) input.onchange = (e) => {
+    const f = e.target.files && e.target.files[0];
+    if (!f) return;
+    compressImage(f, (dataUrl) => {
+      verifySelfieDataUrl = dataUrl;
+      document.getElementById('v-selfie-box').innerHTML = '';
+      document.getElementById('v-selfie-preview').innerHTML = `<img src="${dataUrl}" style="width:112px;height:128px;object-fit:cover;border-radius:12px;margin-top:6px">`;
+    });
+  };
+}
+async function submitVerify() {
+  const p = State.profile;
+  if (!p) return;
+  const phone = document.getElementById('v-phone').value.trim();
+  const name = document.getElementById('v-name').value.trim();
+  const id = document.getElementById('v-id').value.trim();
+  if (!isValidPhone(phone)) { showToast('手机号格式不正确'); return; }
+  if (!isValidName(name)) { showToast('请填写真实姓名（中文）'); return; }
+  if (!isValidIdCard(id)) { showToast('身份证号校验不通过'); return; }
+  const avatar = p.photos && p.photos[0];
+  if (!avatar) { showToast('请先在编辑资料里上传正脸照片'); return; }
+  if (!verifySelfieDataUrl) { showToast('请先自拍一张正脸照'); return; }
+  showToast('正在人脸比对（请稍候）…');
+  try {
+    const score = await baiduFaceMatch(verifySelfieDataUrl, avatar);
+    if (score < 80) {
+      showToast('比对相似度偏低（' + Math.round(score) + '），请用本人正脸自拍重试');
+      return;
+    }
+    State.profile.verify = {
+      ok: true, nameMask: maskName(name), idMask: maskId(id), phoneMask: maskPhone(phone), score: Math.round(score),
+      ts: Date.now(), raw: { name, id, phone } // 仅本地保存明文
+    };
+    saveProfile();
+    State.screen = 'home';
+    render();
+    showToast('✅ 实名认证通过（相似度 ' + Math.round(score) + '%）');
+    uploadMyProfile(); // 上传打码信息到云端
+  } catch (err) {
+    showToast(err.message || '认证失败，请重试');
+  }
+}
+
 // ============== 匹配 ==============
 // 双向匹配：对方符合我的要求，同时我也符合对方的要求，才算互相推荐
 function isMutualMatch(me, other) {
@@ -279,6 +396,7 @@ function render() {
     case 'quiz': main=renderQuiz(); break;
     case 'result': main=renderResult(); break;
     case 'recommend': main=renderRecommend(); break;
+    case 'verify': main=renderVerify(); break;
     case 'sync': main=renderSync(); break;
     case 'settings': main=renderSettings(); break;
     default: main=renderHome();
@@ -295,11 +413,11 @@ function renderTabBar() {
 function renderHome() {
   if(!State.profile) {
     return `<div class="px-5 pt-12">
-      <div class="text-center mb-8"><div class="text-5xl mb-3">💖</div><h1 class="text-2xl font-bold text-gray-800">杭城心动信号</h1><p class="text-sm text-gray-500 mt-2">像刷抖音一样滑卡片 · 互相心动才配对</p><div class="inline-block mt-2 text-xs text-pink-500 bg-pink-50 px-2 py-0.5 rounded-full">v5.2 · 滑卡心动</div></div>
+      <div class="text-center mb-8"><div class="text-5xl mb-3">💖</div><h1 class="text-2xl font-bold text-gray-800">杭城心动信号</h1><p class="text-sm text-gray-500 mt-2">像刷抖音一样滑卡片 · 互相心动才配对</p><div class="inline-block mt-2 text-xs text-pink-500 bg-pink-50 px-2 py-0.5 rounded-full">v5.3 · 滑卡心动</div></div>
       <div class="bg-white rounded-2xl p-5 shadow-sm mb-4"><h3 class="font-bold text-gray-800 mb-3">📌 这是什么？</h3><p class="text-sm text-gray-600 leading-relaxed">每天最多 3 位<b>双向匹配</b>的候选人（你符合 TA、TA 也符合你），右滑 ♥ 喜欢、左滑 ✕ 不喜欢，双方都喜欢才配对、解锁联系方式。没点过的卡片<b>会一直保留</b>。</p></div>
       <div class="bg-white rounded-2xl p-5 shadow-sm mb-6"><h3 class="font-bold text-gray-800 mb-3">✨ 怎么玩？</h3><ol class="text-sm text-gray-600 leading-relaxed space-y-2"><li>1️⃣ 填资料 + 上传照片 + AI 颜值打分</li><li>2️⃣ 进「💘 心动」：每天 3 张候选卡，♥ 喜欢 / ✕ 不喜欢</li><li>3️⃣ 你喜欢的 TA 也喜欢了你 → 💞 配对成功，解锁联系方式</li><li>4️⃣ 配对成功后，来小程序还能直接发私信聊天</li></ol></div>
       <button class="btn-primary" data-act="go-form">开始填写资料 →</button>
-      <div class="text-center mt-4"><button class="text-xs text-gray-400 underline" data-act="force-reload">页面不是 v5.2？点此强制刷新</button></div>
+      <div class="text-center mt-4"><button class="text-xs text-gray-400 underline" data-act="force-reload">页面不是 v5.3？点此强制刷新</button></div>
     </div>`;
   }
   const p = State.profile;
@@ -321,7 +439,7 @@ function renderHome() {
     <div class="bg-white rounded-2xl p-5 shadow-sm mb-4"><h3 class="font-bold text-gray-800 mb-3">🎯 择偶要求</h3><div class="text-sm text-gray-600 space-y-1"><div>性别：${p.requirement.gender==='male'?'男':'女'}</div><div>年龄：${p.requirement.ageMin} - ${p.requirement.ageMax} 岁</div><div>身高：${p.requirement.heightMin} - ${p.requirement.heightMax} cm</div><div>老家：${p.requirement.hometowns.length?p.requirement.hometowns.join(' / '):'不限'}</div><div>颜值分：≥ ${p.requirement.faceScoreMin} 分</div></div></div>
     <div class="bg-white rounded-2xl p-5 shadow-sm mb-4"><h3 class="font-bold text-gray-800 mb-2">📊 心动状态</h3><div class="text-sm text-gray-600">我已心动 <b class="text-pink-500">${(p.liked||[]).length}</b> 位 · 互相心动 <b class="text-pink-500">${myMatched().length}</b> 位</div></div>
     <button class="btn-primary" data-act="go-recommend">💘 开始心动滑卡</button>
-    <div class="text-center mt-4"><button class="text-xs text-gray-400 underline" data-act="force-reload">页面不是 v5.2？点此强制刷新</button></div>
+    <div class="text-center mt-4"><button class="text-xs text-gray-400 underline" data-act="force-reload">页面不是 v5.3？点此强制刷新</button></div>
   </div>`;
 }
 
@@ -385,7 +503,7 @@ function renderResult() {
   </div>`;
 }
 
-// ============== 💘 心动滑卡（v5.2 Tinder 风格） ==============
+// ============== 💘 心动滑卡（v5.3 Tinder 风格） ==============
 // 候选池 = 双方择偶条件互相对上（双向匹配 isMutualMatch）的人；已喜欢♥/已不喜欢✕ 的不再出现
 function getDeckCandidates() {
   const me = State.profile; if (!me) return [];
@@ -513,11 +631,12 @@ function actSkip(id) {
   try { localStorage.setItem(LS_KEYS.skipped, JSON.stringify(State.skipped)); } catch (e) {}
   render();
 }
-// —— 💞 配对成功全屏庆祝 ——
+// —— 💞 配对成功全屏庆祝（未实名则锁定联系方式） ——
 function showMatchOverlay(p) {
-  const contactBox = p.contact && p.contact.account
+  const verified = isVerified(State.profile);
+  const contactBox = verified && p.contact && p.contact.account
     ? `<div style="background:#fff;border-radius:18px;padding:16px 20px;width:min(90vw,360px);margin:0 auto 18px"><div style="font-size:13px;color:#ec4899;margin-bottom:6px">📱 ${p.nickname} 的${contactLabel(p.contact.type)}</div><div style="font-size:22px;font-weight:800;color:#1f2937;word-break:break-all">${p.contact.account}</div><button class="btn-ghost" style="margin-top:12px;padding:6px" id="m-copy">复制账号</button></div>`
-    : '';
+    : `<div style="background:#fff;border-radius:18px;padding:14px 18px;width:min(90vw,360px);margin:0 auto 18px"><div style="font-size:13px;color:#1f2937">🔒 <b>联系方式已锁定</b>：完成实名认证后，才能查看 ${p.nickname} 的联系方式并发私信</div></div>`;
   const ov = document.createElement('div');
   ov.className = 'match-overlay';
   ov.innerHTML = `<div class="match-heart">💘</div>
@@ -525,10 +644,15 @@ function showMatchOverlay(p) {
     <div style="color:#6b7280;margin-bottom:22px">你和 <b>${p.nickname}</b> 互相心动了</div>
     <div style="background:rgba(255,255,255,.8);border-radius:999px;padding:8px 22px;margin-bottom:22px;font-size:13px;color:#9d174d">🎯 你们也互相符合对方的择偶要求</div>
     ${contactBox}
-    <button class="btn-primary" style="width:min(90vw,360px);margin-top:6px" id="m-ok">太棒了，继续滑</button>`;
+    ${verified
+      ? `<button class="btn-primary" style="width:min(90vw,360px);margin-top:6px" id="m-ok">太棒了，继续滑</button>`
+      : `<button class="btn-primary" style="width:min(90vw,360px);margin-top:6px" id="m-verify">🪪 去实名解锁联系方式</button>
+         <button class="btn-ghost" style="width:min(90vw,360px)" id="m-ok">稍后再实名</button>`}`;
   document.body.appendChild(ov);
   const close = () => ov.remove();
-  ov.querySelector('#m-ok').onclick = close;
+  const ok = ov.querySelector('#m-ok'); if (ok) ok.onclick = close;
+  const vf = ov.querySelector('#m-verify');
+  if (vf) vf.onclick = () => { close(); State.screen = 'verify'; render(); };
   const cp = ov.querySelector('#m-copy');
   if (cp) cp.onclick = () => copyToClipboard(p.contact.account);
 }
@@ -569,8 +693,8 @@ function renderSettings() {
     <h2 class="text-lg font-bold text-gray-800 mb-4">⚙️ 我的</h2>
     <div class="bg-white rounded-2xl p-5 shadow-sm mb-4"><h3 class="font-bold text-gray-800 mb-3">📋 我的颜值分</h3><div class="text-center py-4"><div class="text-4xl font-bold text-pink-500">${p&&p.faceScore?p.faceScore.toFixed(1):'-'}</div><div class="text-sm text-gray-500 mt-1">满分 10 分 · 剩余重评 ${remain>0?remain:0} 次</div></div>${p?`<button class="btn-ghost w-full" data-act="re-score" ${remain<=0?'disabled':''}>${remain<=0?'重评次数已用完':'重新评测 ('+remain+' 次剩余)'}</button>`:''}</div>
     <div class="bg-white rounded-2xl p-5 shadow-sm mb-4"><h3 class="font-bold text-gray-800 mb-3">📝 资料编辑</h3><button class="btn-secondary" data-act="go-form">编辑我的资料</button></div>
-    ${p ? `<div class="bg-white rounded-2xl p-5 shadow-sm mb-4"><h3 class="font-bold text-gray-800 mb-2">🪪 认证状态</h3><div class="text-sm text-gray-600" id="verify-box">${p.realNameVerified ? '✅ 已实名认证' : '⚠️ 未实名：滑动配对前需完成实名认证'}</div></div>` : ''}
-    <div class="text-center mt-6"><button class="text-xs text-gray-300 underline" data-act="leader-entry">群主管理入口</button><div class="text-xs text-gray-400 mt-6">杭城心动信号 v5.2</div></div>
+    ${p ? (isVerified(p) ? `<div class="bg-white rounded-2xl p-5 shadow-sm mb-4"><h3 class="font-bold text-gray-800 mb-2">🪪 实名认证</h3><div class="text-sm text-gray-600">✅ 已实名（姓名 ${p.verify.nameMask} · ${new Date(p.verify.ts).toLocaleDateString()}）</div></div>` : `<div class="bg-white rounded-2xl p-5 shadow-sm mb-4"><h3 class="font-bold text-gray-800 mb-2">🪪 实名认证</h3><div class="text-sm text-gray-600 mb-3">配对成功、查看联系方式、发私信都需要先实名</div><button class="btn-secondary" data-act="go-verify">🪪 立即实名认证</button></div>`) : ''}
+    <div class="text-center mt-6"><button class="text-xs text-gray-300 underline" data-act="leader-entry">群主管理入口</button><div class="text-xs text-gray-400 mt-6">杭城心动信号 v5.3</div></div>
   </div>`;
 }
 
@@ -597,6 +721,7 @@ function bindScreen() {
     };
   });
   bindDeckDrag();
+  if (State.screen === 'verify') bindVerifyPhoto();
   document.body.onclick = onClick;
 }
 function goRecommend() {
@@ -628,6 +753,8 @@ function onClick(e) {
     case 're-score': startReScore(); return;
     case 'leader-entry': openLeaderAuth(); return;
     case 'view-profile': openProfileModal(State.groupData.find(x=>x.id===t.dataset.id)); return;
+    case 'go-verify': if(State.profile) { State.screen='verify'; } else { showToast('请先填写资料'); } break;
+    case 'do-verify': submitVerify(); return;
     case 'force-reload': location.href = location.pathname + '?v=' + Date.now(); return;
     case 'copy-code': if(State.profile) copyToClipboard(State.profile.id); return;
     case 'restore-code': openRestoreModal(); return;
@@ -654,9 +781,10 @@ function openProfileModal(person) {
         <span class="badge" style="background:#fce7f3;color:#be185d">颜值 ${(person.faceScore||0).toFixed(1)}</span>
       </div>
       <div style="font-size:14px;color:#6b7280;margin-bottom:14px">${person.gender==='female'?'♀ 女':'♂ 男'} · ${person.age}岁 · ${person.height}cm · 📍${person.hometown}</div>
-      ${person.contact?.account ? `<div style="background:#fdf2f8;border-radius:14px;padding:14px;margin-bottom:12px"><div style="font-size:12px;color:#ec4899;margin-bottom:4px">📱 联系方式（${contactLabel(person.contact.type)}）</div><div style="font-size:20px;font-weight:700;color:#1f2937;word-break:break-all">${person.contact.account}</div></div>` : ''}
+      ${isVerified(State.profile) && person.contact?.account ? `<div style="background:#fdf2f8;border-radius:14px;padding:14px;margin-bottom:12px"><div style="font-size:12px;color:#ec4899;margin-bottom:4px">📱 联系方式（${contactLabel(person.contact.type)}）</div><div style="font-size:20px;font-weight:700;color:#1f2937;word-break:break-all">${person.contact.account}</div></div>` : `<div style="background:#fffbeb;border-radius:14px;padding:12px 14px;margin-bottom:12px;font-size:13px;color:#92400e">🔒 完成实名认证后可查看 TA 的联系方式</div>`}
       <div style="font-size:12px;color:#16a34a;background:#f0fdf4;border-radius:12px;padding:10px 14px">💘 你们互相符合对方的择偶要求，已双向匹配</div>
-      <button class="btn-ghost" style="width:100%;margin-top:14px" data-modal="close">关闭</button>
+      ${isVerified(State.profile) ? `<button class="btn-ghost" style="width:100%;margin-top:14px" data-modal="close">关闭</button>` : `<button class="btn-ghost" style="width:100%;margin-top:14px" data-act="go-verify">🪪 去实名认证</button>
+      <button class="btn-ghost" style="width:100%;margin-top:8px" data-modal="close">稍后再说</button>`}
     </div>
   </div>`;
   document.body.appendChild(m);
@@ -869,6 +997,11 @@ async function uploadMyProfile() {
     // 上传前去除冗余的本地字段（photoDataUrl 与 photos[0] 重复，不重复传云端）
     const profileToUpload = Object.assign({}, State.profile);
     delete profileToUpload.photoDataUrl;
+    // 🔒 实名明文只留本地：上传只带打码信息，身份证号/姓名/手机号明文绝不进公开云端
+    if (profileToUpload.verify) {
+      const v = profileToUpload.verify;
+      profileToUpload.verify = { ok: !!v.ok, nameMask: v.nameMask, idMask: v.idMask, phoneMask: v.phoneMask, score: v.score, ts: v.ts };
+    }
     // ⚠️ 防覆盖保护：必须先成功拉到云端最新列表，才允许合并写回；
     //    拉取失败（断网/被墙）直接失败返回，绝不拿旧缓存或空列表去覆盖云端
     const latest = await fetchGroupData();
