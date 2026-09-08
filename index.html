@@ -255,6 +255,49 @@ function maskPhone(p) { return p ? (p.slice(0,3) + '****' + p.slice(7)) : ''; }
 // 身份证：保留前6+后4（地区+校验）
 function maskId(id) { return id ? (id.slice(0,6) + '********' + id.slice(-4)) : ''; }
 
+const FACE_GROUP = 'verify_v1';
+async function faceApi(path, payload) {
+  const tk = await getBaiduAccessToken();
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const res = await fetch('https://aip.baidubce.com/rest/2.0/face/v3/' + path + '?access_token=' + tk, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const d = await res.json();
+      if (d.error_code === 18) { await new Promise(r => setTimeout(r, 800)); continue; }
+      return d;
+    } catch (e) { if (attempt === 2) throw new Error('人脸服务请求失败'); await new Promise(r => setTimeout(r, 500)); }
+  }
+}
+async function ensureFaceGroup() {
+  const d = await faceApi('faceset/group/add', { group_id: FACE_GROUP });
+  if (d.error_code === 0 || d.error_code === 223101) return;
+  if (d.error_code === 17) throw new Error('人脸搜索今日免费次数已用完，请明天再试或领取额度');
+  throw new Error(d.error_msg || '人脸服务异常');
+}
+const b64Clean = d => String(d || '').replace(/^data:image\/\w+;base64,/, '');
+async function baiduRegisterFace(selfieDataUrl) {
+  const me = State.profile; if (!me) throw new Error('请先填写资料');
+  await ensureFaceGroup();
+  const uid = me.id;
+  const ug = await faceApi('faceset/user/get', { user_id: uid, group_id: FACE_GROUP });
+  if (ug.error_code === 0 && ug.result && ug.result.face_list) {
+    for (const f of ug.result.face_list) await faceApi('faceset/face/delete', { group_id: FACE_GROUP, user_id: uid, face_token: f.face_token }).catch(() => {});
+  }
+  const add = await faceApi('faceset/user/add', { group_id: FACE_GROUP, user_id: uid, image: b64Clean(selfieDataUrl), image_type: 'BASE64' });
+  if (add.error_code === 0 || add.error_code === 223103 || add.error_code === 223105) return;
+  throw new Error(add.error_msg || '人脸入库失败');
+}
+async function baiduIdentifyMe(dataUrl) {
+  const d = await faceApi('search', { group_id_list: FACE_GROUP, image: b64Clean(dataUrl), image_type: 'BASE64', max_face_num: 1 });
+  if (d.error_code === 0 && d.result && d.result.user_list && d.result.user_list.length) {
+    const u = d.result.user_list[0];
+    return { userId: u.user_id, score: u.score };
+  }
+  return null;
+}
+
 async function baiduFaceMatch(selfieDataUrl, avatarDataUrl) {
   const url = `https://aip.baidubce.com/rest/2.0/face/v3/match?access_token=${await getBaiduAccessToken()}`;
   const clean = d => d.replace(/^data:image\/\w+;base64,/, '');
@@ -277,11 +320,9 @@ async function baiduFaceMatch(selfieDataUrl, avatarDataUrl) {
 function renderVerify() {
   const p = State.profile;
   if (!p) return renderHome();
-  let faceOk = false;
-  try { faceOk = !!localStorage.getItem('xqbb_verify_face'); } catch (err) {}
   const verifiedOk = isVerified(p) && p.verify;
-  const already = verifiedOk && faceOk;                 // 实名且有本机人脸基准 → 完成态
-  const needReFace = verifiedOk && !faceOk;             // 实名但缺基准（换设备/清缓存）→ 预填重录
+  const already = verifiedOk && !State.reverify;        // 完成态
+  const needReFace = verifiedOk && State.reverify;      // "更新人脸基准"重录态
   const raw = (p.verify && p.verify.raw) || {};
   const avatar = p.photos && p.photos[0];
   return `<div class="px-5 pt-6">
@@ -293,7 +334,7 @@ function renderVerify() {
         <div class="text-xs text-gray-500">${needReFace ? '检测到你本机缺少人脸基准照（换手机/清缓存导致）：请直接再提交一次，信息已自动填入。' : '相亲严肃场，配对/私信前需实名；打分照片也会与实名人脸比对，杜绝乱填乱骗'}</div></div>
       </div>
       ${already ? `<div class="bg-green-50 rounded-xl p-3 text-sm text-green-800 mb-2">姓名 ${p.verify.nameMask} · 身份证 ${p.verify.idMask}<br>手机 ${p.verify.phoneMask} · 认证时间 ${new Date(p.verify.ts).toLocaleDateString()}</div>
-      <div class="text-xs text-gray-500 mb-2">✅ 人脸基准已保存：之后上传的颜值打分照片都会与你的人脸比对，是同一人才计分</div>
+      <div class="text-xs text-gray-500 mb-2">✅ 你的人脸已存入百度人脸库：之后上传的颜值打分照片都会核验为本人才能计分</div>
       <button class="btn-secondary" data-act="re-verify-face">🔄 更新人脸基准</button>` : ''}
       <div class="text-xs text-gray-400 mt-2">提示：真实姓名与身份证号仅用于身份标注，云端只存打码信息，不会泄露。</div>
     </div>
@@ -343,18 +384,18 @@ async function submitVerify() {
   if (!verifySelfieDataUrl) { showToast('请先自拍一张正脸照'); return; }
   showToast('正在人脸比对（请稍候）…');
   try {
-    const score = await baiduFaceMatch(verifySelfieDataUrl, avatar);
-    if (score < 80) {
-      showToast('比对相似度偏低（' + Math.round(score) + '），请用本人正脸自拍重试');
+    await baiduRegisterFace(verifySelfieDataUrl);   // 自拍入库（脸存百度人脸库）
+    const rid = await baiduIdentifyMe(avatar);       // 资料封面照也必须是本人
+    if (!rid || rid.userId !== State.profile.id || rid.score < 80) {
+      showToast('资料封面不是本人（相似度 ' + (rid ? Math.round(rid.score) : 0) + '%），请先把资料第一张照片换成你自己的正脸照再实名');
       return;
     }
     State.profile.verify = {
-      ok: true, nameMask: maskName(name), idMask: maskId(id), phoneMask: maskPhone(phone), score: Math.round(score),
+      ok: true, nameMask: maskName(name), idMask: maskId(id), phoneMask: maskPhone(phone), score: Math.round(rid.score),
       ts: Date.now(), raw: { name, id, phone } // 仅本地保存明文
     };
+    State.reverify = false;
     saveProfile();
-    // 🤳 人脸基准存本机：颜值打分照片必须与它比对为同一人才有效（明文不进云端）
-    try { localStorage.setItem('xqbb_verify_face', verifySelfieDataUrl); } catch (err) {}
     State.screen = 'home';
     render();
     showToast('✅ 实名认证通过（相似度 ' + Math.round(score) + '%）');
@@ -779,7 +820,7 @@ function onClick(e) {
     case 'leader-entry': openLeaderAuth(); return;
     case 'view-profile': openProfileModal(State.groupData.find(x=>x.id===t.dataset.id)); return;
     case 'go-verify': if(State.profile) { State.screen='verify'; } else { showToast('请先填写资料'); } break;
-    case 're-verify-face': try { localStorage.removeItem('xqbb_verify_face'); } catch (e) {} State.screen='verify'; break;
+    case 're-verify-face': State.reverify = true; State.screen='verify'; break;
     case 'do-verify': submitVerify(); return;
     case 'force-reload': location.href = location.pathname + '?v=' + Date.now(); return;
     case 'copy-code': if(State.profile) copyToClipboard(State.profile.id); return;
@@ -889,21 +930,14 @@ async function startFaceScore() {
     setTimeout(() => { State.screen = 'verify'; render(); }, 900);
     return;
   }
-  let baseFace = '';
-  try { baseFace = localStorage.getItem('xqbb_verify_face') || ''; } catch (err) {}
-  if (!baseFace) {
-    showToast('本机缺少人脸基准，请重新实名一次');
-    setTimeout(() => { State.screen = 'verify'; render(); }, 900);
-    return;
-  }
   const btn = document.getElementById('quiz-start');
-  if(btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> 人脸一致性比对...'; }
+  if(btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> 人脸核验...'; }
   try {
-    // 一致性比对：打分照片 vs 实名自拍基准
-    const matchScore = await baiduFaceMatch(dataUrl, baseFace);
-    if (matchScore < 80) {
+    // 人脸核验：打分照片必须在人脸库命中本人
+    const rid = await baiduIdentifyMe(dataUrl);
+    if (!rid || rid.userId !== me.id || rid.score < 80) {
       if(btn) { btn.disabled = false; btn.innerHTML = '🤖 开始系统打分'; }
-      showToast('✋ 这张照片与实名本人相似度仅 ' + Math.round(matchScore) + '%，请用你自己的正脸照打分');
+      showToast('✋ 这张照片与实名本人相似度仅 ' + (rid ? Math.round(rid.score) : 0) + '%，请用你自己的正脸照打分');
       return;
     }
     if(btn) { btn.innerHTML = '<span class="spinner"></span> 打分中...'; }
