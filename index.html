@@ -43,7 +43,7 @@
   .tag-chip.selected { border-color:var(--primary); background:var(--primary-light); color:var(--primary-dark); }
   .spinner { display:inline-block; width:18px; height:18px; border:2px solid #fff; border-top-color:transparent; border-radius:50%; animation:spin .7s linear infinite; }
   @keyframes spin { to{transform:rotate(360deg);} }
-/* ===== v5.3 心动滑卡（Tinder 风格） ===== */
+/* ===== v5.4 心动滑卡（Tinder 风格） ===== */
 .deck-wrap{position:relative;width:min(94vw,400px);height:min(68vh,600px);min-height:420px;margin:0 auto}
 .swipe-card{position:absolute;inset:0;margin:auto;width:100%;height:100%;border-radius:26px;overflow:hidden;background:#fff;box-shadow:0 12px 34px rgba(0,0,0,.2);user-select:none;touch-action:none;transform-origin:50% 100%}
 .swipe-card.back1{transform:scale(.94) translateY(12px);box-shadow:0 6px 18px rgba(0,0,0,.12)}
@@ -261,24 +261,31 @@ async function baiduFaceMatch(selfieDataUrl, avatarDataUrl) {
 function renderVerify() {
   const p = State.profile;
   if (!p) return renderHome();
-  const already = isVerified(p) && p.verify;
+  let faceOk = false;
+  try { faceOk = !!localStorage.getItem('xqbb_verify_face'); } catch (err) {}
+  const verifiedOk = isVerified(p) && p.verify;
+  const already = verifiedOk && faceOk;                 // 实名且有本机人脸基准 → 完成态
+  const needReFace = verifiedOk && !faceOk;             // 实名但缺基准（换设备/清缓存）→ 预填重录
+  const raw = (p.verify && p.verify.raw) || {};
   const avatar = p.photos && p.photos[0];
   return `<div class="px-5 pt-6">
     <div class="flex items-center mb-5"><button class="text-2xl text-gray-500" data-act="back">←</button><h2 class="text-lg font-bold text-gray-800 ml-3">🪪 实名认证</h2></div>
     <div class="bg-white rounded-2xl p-5 shadow-sm mb-4">
       <div class="flex items-center gap-3 mb-3">
         <div style="font-size:34px">${already ? '✅' : '🪪'}</div>
-        <div><div class="font-bold text-gray-800">${already ? '已完成实名认证' : '为什么需要实名？'}</div>
-        <div class="text-xs text-gray-500">相亲严肃场，互相心动配对 & 私信前需实名，杜绝乱填乱骗</div></div>
+        <div><div class="font-bold text-gray-800">${already ? '已完成实名认证' : needReFace ? '请重新采集人脸基准' : '为什么需要实名？'}</div>
+        <div class="text-xs text-gray-500">${needReFace ? '检测到你本机缺少人脸基准照（换手机/清缓存导致）：请直接再提交一次，信息已自动填入。' : '相亲严肃场，配对/私信前需实名；打分照片也会与实名人脸比对，杜绝乱填乱骗'}</div></div>
       </div>
-      ${already ? `<div class="bg-green-50 rounded-xl p-3 text-sm text-green-800 mb-2">姓名 ${p.verify.nameMask} · 身份证 ${p.verify.idMask}<br>手机 ${p.verify.phoneMask} · 认证时间 ${new Date(p.verify.ts).toLocaleDateString()}</div>` : ''}
-      <div class="text-xs text-gray-400">提示：真实姓名与身份证号仅用于身份标注，云端只存打码信息，不会泄露。</div>
+      ${already ? `<div class="bg-green-50 rounded-xl p-3 text-sm text-green-800 mb-2">姓名 ${p.verify.nameMask} · 身份证 ${p.verify.idMask}<br>手机 ${p.verify.phoneMask} · 认证时间 ${new Date(p.verify.ts).toLocaleDateString()}</div>
+      <div class="text-xs text-gray-500 mb-2">✅ 人脸基准已保存：之后上传的颜值打分照片都会与你的人脸比对，是同一人才计分</div>
+      <button class="btn-secondary" data-act="re-verify-face">🔄 更新人脸基准</button>` : ''}
+      <div class="text-xs text-gray-400 mt-2">提示：真实姓名与身份证号仅用于身份标注，云端只存打码信息，不会泄露。</div>
     </div>
     ${already ? '' : `
     <div class="bg-white rounded-2xl p-5 shadow-sm mb-4">
-      <div class="mb-4"><label class="label-text">手机号（用于联系核实）</label><input class="input-field" id="v-phone" placeholder="11 位手机号" maxlength="11"></div>
-      <div class="grid grid-cols-1 gap-3 mb-4"><div><label class="label-text">真实姓名</label><input class="input-field" id="v-name" placeholder="与身份证一致" maxlength="10"></div><div><label class="label-text">身份证号</label><input class="input-field" id="v-id" placeholder="18 位身份证号" maxlength="18"></div></div>
-      <div class="mb-2"><label class="label-text">自拍一张正脸照（用于与资料照片比对为同一人）</label>
+      <div class="mb-4"><label class="label-text">手机号（用于联系核实）</label><input class="input-field" id="v-phone" placeholder="11 位手机号" maxlength="11" value="${raw.phone || ''}"></div>
+      <div class="grid grid-cols-1 gap-3 mb-4"><div><label class="label-text">真实姓名</label><input class="input-field" id="v-name" placeholder="与身份证一致" maxlength="10" value="${raw.name || ''}"></div><div><label class="label-text">身份证号</label><input class="input-field" id="v-id" placeholder="18 位身份证号" maxlength="18" value="${raw.id || ''}"></div></div>
+      <div class="mb-2"><label class="label-text">自拍一张正脸照（与资料照片比对，作为你的人脸基准）</label>
         <div id="v-selfie" style="display:flex;gap:12px;align-items:center">
           <label for="verify-photo-input" style="cursor:pointer"><div id="v-selfie-box" class="w-28 h-32 rounded-xl bg-pink-50 flex items-center justify-center text-pink-300 text-3xl" style="width:112px;height:128px">🤳</div></label>
           <div class="text-xs text-gray-400" style="max-width:180px">拍一张现在的正脸照，光线充足、不戴帽子口罩</div>
@@ -287,7 +294,7 @@ function renderVerify() {
         <div id="v-selfie-preview"></div>
       </div>
     </div>
-    <button class="btn-primary mb-3" data-act="do-verify">🪪 提交实名认证</button>`}
+    <button class="btn-primary mb-3" data-act="do-verify">🪪 ${needReFace ? '重新提交（保存人脸基准）' : '提交实名认证'}</button>`}
     <button class="btn-ghost w-full" data-act="back">返回</button>
     ${avatar ? '' : '<div class="text-xs text-red-400 mt-2">⚠️ 资料还没上传照片，请先到「编辑资料」上传一张正脸照再实名</div>'}
   </div>`;
@@ -330,6 +337,8 @@ async function submitVerify() {
       ts: Date.now(), raw: { name, id, phone } // 仅本地保存明文
     };
     saveProfile();
+    // 🤳 人脸基准存本机：颜值打分照片必须与它比对为同一人才有效（明文不进云端）
+    try { localStorage.setItem('xqbb_verify_face', verifySelfieDataUrl); } catch (err) {}
     State.screen = 'home';
     render();
     showToast('✅ 实名认证通过（相似度 ' + Math.round(score) + '%）');
@@ -413,11 +422,11 @@ function renderTabBar() {
 function renderHome() {
   if(!State.profile) {
     return `<div class="px-5 pt-12">
-      <div class="text-center mb-8"><div class="text-5xl mb-3">💖</div><h1 class="text-2xl font-bold text-gray-800">杭城心动信号</h1><p class="text-sm text-gray-500 mt-2">像刷抖音一样滑卡片 · 互相心动才配对</p><div class="inline-block mt-2 text-xs text-pink-500 bg-pink-50 px-2 py-0.5 rounded-full">v5.3 · 滑卡心动</div></div>
+      <div class="text-center mb-8"><div class="text-5xl mb-3">💖</div><h1 class="text-2xl font-bold text-gray-800">杭城心动信号</h1><p class="text-sm text-gray-500 mt-2">像刷抖音一样滑卡片 · 互相心动才配对</p><div class="inline-block mt-2 text-xs text-pink-500 bg-pink-50 px-2 py-0.5 rounded-full">v5.4 · 滑卡心动</div></div>
       <div class="bg-white rounded-2xl p-5 shadow-sm mb-4"><h3 class="font-bold text-gray-800 mb-3">📌 这是什么？</h3><p class="text-sm text-gray-600 leading-relaxed">每天最多 3 位<b>双向匹配</b>的候选人（你符合 TA、TA 也符合你），右滑 ♥ 喜欢、左滑 ✕ 不喜欢，双方都喜欢才配对、解锁联系方式。没点过的卡片<b>会一直保留</b>。</p></div>
       <div class="bg-white rounded-2xl p-5 shadow-sm mb-6"><h3 class="font-bold text-gray-800 mb-3">✨ 怎么玩？</h3><ol class="text-sm text-gray-600 leading-relaxed space-y-2"><li>1️⃣ 填资料 + 上传照片 + AI 颜值打分</li><li>2️⃣ 进「💘 心动」：每天 3 张候选卡，♥ 喜欢 / ✕ 不喜欢</li><li>3️⃣ 你喜欢的 TA 也喜欢了你 → 💞 配对成功，解锁联系方式</li><li>4️⃣ 配对成功后，来小程序还能直接发私信聊天</li></ol></div>
       <button class="btn-primary" data-act="go-form">开始填写资料 →</button>
-      <div class="text-center mt-4"><button class="text-xs text-gray-400 underline" data-act="force-reload">页面不是 v5.3？点此强制刷新</button></div>
+      <div class="text-center mt-4"><button class="text-xs text-gray-400 underline" data-act="force-reload">页面不是 v5.4？点此强制刷新</button></div>
     </div>`;
   }
   const p = State.profile;
@@ -439,7 +448,7 @@ function renderHome() {
     <div class="bg-white rounded-2xl p-5 shadow-sm mb-4"><h3 class="font-bold text-gray-800 mb-3">🎯 择偶要求</h3><div class="text-sm text-gray-600 space-y-1"><div>性别：${p.requirement.gender==='male'?'男':'女'}</div><div>年龄：${p.requirement.ageMin} - ${p.requirement.ageMax} 岁</div><div>身高：${p.requirement.heightMin} - ${p.requirement.heightMax} cm</div><div>老家：${p.requirement.hometowns.length?p.requirement.hometowns.join(' / '):'不限'}</div><div>颜值分：≥ ${p.requirement.faceScoreMin} 分</div></div></div>
     <div class="bg-white rounded-2xl p-5 shadow-sm mb-4"><h3 class="font-bold text-gray-800 mb-2">📊 心动状态</h3><div class="text-sm text-gray-600">我已心动 <b class="text-pink-500">${(p.liked||[]).length}</b> 位 · 互相心动 <b class="text-pink-500">${myMatched().length}</b> 位</div></div>
     <button class="btn-primary" data-act="go-recommend">💘 开始心动滑卡</button>
-    <div class="text-center mt-4"><button class="text-xs text-gray-400 underline" data-act="force-reload">页面不是 v5.3？点此强制刷新</button></div>
+    <div class="text-center mt-4"><button class="text-xs text-gray-400 underline" data-act="force-reload">页面不是 v5.4？点此强制刷新</button></div>
   </div>`;
 }
 
@@ -503,7 +512,7 @@ function renderResult() {
   </div>`;
 }
 
-// ============== 💘 心动滑卡（v5.3 Tinder 风格） ==============
+// ============== 💘 心动滑卡（v5.4 Tinder 风格） ==============
 // 候选池 = 双方择偶条件互相对上（双向匹配 isMutualMatch）的人；已喜欢♥/已不喜欢✕ 的不再出现
 function getDeckCandidates() {
   const me = State.profile; if (!me) return [];
@@ -694,7 +703,7 @@ function renderSettings() {
     <div class="bg-white rounded-2xl p-5 shadow-sm mb-4"><h3 class="font-bold text-gray-800 mb-3">📋 我的颜值分</h3><div class="text-center py-4"><div class="text-4xl font-bold text-pink-500">${p&&p.faceScore?p.faceScore.toFixed(1):'-'}</div><div class="text-sm text-gray-500 mt-1">满分 10 分 · 剩余重评 ${remain>0?remain:0} 次</div></div>${p?`<button class="btn-ghost w-full" data-act="re-score" ${remain<=0?'disabled':''}>${remain<=0?'重评次数已用完':'重新评测 ('+remain+' 次剩余)'}</button>`:''}</div>
     <div class="bg-white rounded-2xl p-5 shadow-sm mb-4"><h3 class="font-bold text-gray-800 mb-3">📝 资料编辑</h3><button class="btn-secondary" data-act="go-form">编辑我的资料</button></div>
     ${p ? (isVerified(p) ? `<div class="bg-white rounded-2xl p-5 shadow-sm mb-4"><h3 class="font-bold text-gray-800 mb-2">🪪 实名认证</h3><div class="text-sm text-gray-600">✅ 已实名（姓名 ${p.verify.nameMask} · ${new Date(p.verify.ts).toLocaleDateString()}）</div></div>` : `<div class="bg-white rounded-2xl p-5 shadow-sm mb-4"><h3 class="font-bold text-gray-800 mb-2">🪪 实名认证</h3><div class="text-sm text-gray-600 mb-3">配对成功、查看联系方式、发私信都需要先实名</div><button class="btn-secondary" data-act="go-verify">🪪 立即实名认证</button></div>`) : ''}
-    <div class="text-center mt-6"><button class="text-xs text-gray-300 underline" data-act="leader-entry">群主管理入口</button><div class="text-xs text-gray-400 mt-6">杭城心动信号 v5.3</div></div>
+    <div class="text-center mt-6"><button class="text-xs text-gray-300 underline" data-act="leader-entry">群主管理入口</button><div class="text-xs text-gray-400 mt-6">杭城心动信号 v5.4</div></div>
   </div>`;
 }
 
@@ -754,6 +763,7 @@ function onClick(e) {
     case 'leader-entry': openLeaderAuth(); return;
     case 'view-profile': openProfileModal(State.groupData.find(x=>x.id===t.dataset.id)); return;
     case 'go-verify': if(State.profile) { State.screen='verify'; } else { showToast('请先填写资料'); } break;
+    case 're-verify-face': try { localStorage.removeItem('xqbb_verify_face'); } catch (e) {} State.screen='verify'; break;
     case 'do-verify': submitVerify(); return;
     case 'force-reload': location.href = location.pathname + '?v=' + Date.now(); return;
     case 'copy-code': if(State.profile) copyToClipboard(State.profile.id); return;
@@ -856,9 +866,31 @@ async function startFaceScore() {
   // AI 打分用本地 dataUrl（不存云端），优先用刚上传的临时数据
   const dataUrl = State.tempPhotoDataUrl || State.profile?.photoDataUrl;
   if(!dataUrl) { showToast('请先上传照片'); return; }
+  // 🪪 打分照片必须与"实名人脸基准"为同一人，杜绝网图/他人照片刷分
+  const me = State.profile;
+  if (!me || !me.verify || !me.verify.ok) {
+    showToast('请先完成实名认证再打分');
+    setTimeout(() => { State.screen = 'verify'; render(); }, 900);
+    return;
+  }
+  let baseFace = '';
+  try { baseFace = localStorage.getItem('xqbb_verify_face') || ''; } catch (err) {}
+  if (!baseFace) {
+    showToast('本机缺少人脸基准，请重新实名一次');
+    setTimeout(() => { State.screen = 'verify'; render(); }, 900);
+    return;
+  }
   const btn = document.getElementById('quiz-start');
-  if(btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> 打分中...'; }
+  if(btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> 人脸一致性比对...'; }
   try {
+    // 一致性比对：打分照片 vs 实名自拍基准
+    const matchScore = await baiduFaceMatch(dataUrl, baseFace);
+    if (matchScore < 80) {
+      if(btn) { btn.disabled = false; btn.innerHTML = '🤖 开始系统打分'; }
+      showToast('✋ 这张照片与实名本人相似度仅 ' + Math.round(matchScore) + '%，请用你自己的正脸照打分');
+      return;
+    }
+    if(btn) { btn.innerHTML = '<span class="spinner"></span> 打分中...'; }
     const result = await detectFace(dataUrl);
     const score = Math.round(result.beauty / 10 * 10) / 10;
     State.profile.faceScore = score;
@@ -868,7 +900,7 @@ async function startFaceScore() {
     saveProfile();
     syncProfileToGroup();
     const el = document.getElementById('quiz-result');
-    if(el) el.innerHTML = `<div class="text-center py-4"><div class="text-4xl font-bold text-pink-500">${score.toFixed(1)}</div><div class="text-sm text-gray-500 mt-1">AI 评分（原始 ${result.beauty} 分）</div></div>`;
+    if(el) el.innerHTML = `<div class="text-center py-4"><div class="text-4xl font-bold text-pink-500">${score.toFixed(1)}</div><div class="text-sm text-gray-500 mt-1">AI 评分（原始 ${result.beauty} 分 · 已通过本人核验）</div></div>`;
     State.screen = 'result';
     render();
   } catch(err) {
