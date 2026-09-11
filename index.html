@@ -32,6 +32,10 @@
   .input-field { width:100%; padding:12px 16px; border:1.5px solid #e5e7eb; border-radius:12px; font-size:16px; background:#fff; transition:border-color .2s; }
   .input-field:focus { outline:none; border-color:var(--primary); }
   .label-text { font-size:14px; color:#6b7280; margin-bottom:6px; display:block; font-weight:500; }
+
+  /* 协议勾选框 */
+  .checkbox { flex-shrink:0; width:20px; height:20px; border-radius:6px; border:2px solid #d1d5db; background:#fff; display:flex; align-items:center; justify-content:center; font-size:14px; color:#fff; font-weight:700; line-height:1; cursor:pointer; transition:all .15s; }
+  .checkbox.on { background:linear-gradient(135deg,#ec4899,#f472b6); border-color:#ec4899; }
   .toast { position:fixed; bottom:100px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,.85); color:#fff; padding:10px 20px; border-radius:999px; font-size:14px; z-index:999; animation:slideUp .3s; }
   @keyframes slideUp { from{opacity:0;transform:translate(-50%,20px);} to{opacity:1;transform:translate(-50%,0);} }
   .tab-bar { position:fixed; bottom:0; left:0; right:0; background:#fff; border-top:1px solid #f3f4f6; display:flex; padding:8px 0; padding-bottom:env(safe-area-inset-bottom,8px); z-index:50; }
@@ -351,10 +355,65 @@ function renderVerify() {
         <div id="v-selfie-preview"></div>
       </div>
     </div>
+    <!-- 📄 协议同意（合规必备：未勾选不能提交） -->
+    <div class="bg-white rounded-2xl p-4 shadow-sm mb-4" style="display:flex;align-items:flex-start;gap:12px" id="v-agree-row">
+      <div id="v-agree-box" class="checkbox" onclick="toggleAgree()"></div>
+      <div style="font-size:13px;color:#6b7280;line-height:1.6">
+        我已阅读并同意<a href="javascript:void(0)" onclick="openAgreement()" style="color:#ec4899;font-weight:700">《用户协议与隐私政策》</a>，特别是关于<span style="color:#ec4899;font-weight:700">聊天记录查阅</span>的条款
+      </div>
+    </div>
     <button class="btn-primary mb-3" data-act="do-verify">🪪 ${needReFace ? '重新提交（保存人脸基准）' : '提交实名认证'}</button>`}
     <button class="btn-ghost w-full" data-act="back">返回</button>
     ${avatar ? '' : '<div class="text-xs text-red-400 mt-2">⚠️ 资料还没上传照片，请先到「编辑资料」上传一张正脸照再实名</div>'}
   </div>`;
+}
+
+// ===== 📄 用户协议与隐私政策（合规告知：聊天记录查阅条款）=====
+const AGREEMENT = {
+  version: 'v1',
+  summary: '为保障交友安全、处理投诉纠纷，平台可能在收到举报或用户申请时查阅相关聊天记录',
+  points: [
+    { h: '1. 聊天记录的查阅', p: '为保障交友安全、处理投诉举报与纠纷，平台可能在收到举报或用户申请时查阅相关聊天记录。查阅范围仅限于经举报或申请所指涉的对话内容，平台不会对您的聊天记录进行与上述目的无关的查阅。' },
+    { h: '2. 我们收集哪些信息', p: '为完成实名认证与交友匹配，我们会收集您填写的手机号、真实姓名、身份证号（仅本地保存明文）及人脸照片（用于本人核验）。云端仅保存打码后的信息（如"张**""3301********1234"），不存储身份证明文。' },
+    { h: '3. 信息如何使用', p: '您的资料、颜值评分与择偶条件会展示给平台其他用户，用于相亲匹配与推荐。您的手机号等联系方式仅向与您互相心动且已完成实名认证的用户展示。' },
+    { h: '4. 人脸信息', p: '人脸特征用于核验"打分照片是否为本人"，仅存储于第三方人脸识别服务（百度 AI）的人脸库中，用于本人比对，不用于其他用途，不向其他用户展示。' },
+    { h: '5. 您的权利', p: '您有权查询、更正、删除您的个人信息。如需注销账号或删除资料，可联系管理员处理。删除后我们将同步删除云端相关资料信息。' },
+    { h: '6. 信息安全', p: '我们采取加密、权限隔离等措施保护您的信息。聊天内容仅有对话双方可读取，平台仅在上述第 1 条约定的情形下、经必要程序后依规调阅。' }
+  ],
+  foot: '勾选即表示您已阅读、理解并同意上述全部条款。若您不同意，将无法完成实名认证，但仍可浏览平台内容。'
+};
+const AGREED_KEY = 'xqbb_agreed_v1';
+function isAgreed() { try { return localStorage.getItem(AGREED_KEY) === '1'; } catch (e) { return false; } }
+function setAgreed(v) {
+  try { v ? localStorage.setItem(AGREED_KEY, '1') : localStorage.removeItem(AGREED_KEY); } catch (e) {}
+  const box = document.getElementById('v-agree-box');
+  if (box) box.classList.toggle('on', v);
+  if (box) box.innerHTML = v ? '✓' : '';
+}
+function toggleAgree() { setAgreed(!isAgreed()); }
+function openAgreement() {
+  const old = document.getElementById('ag-overlay'); if (old) old.remove();
+  const ov = document.createElement('div');
+  ov.id = 'ag-overlay';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(17,24,39,.55);display:flex;align-items:flex-end;justify-content:center';
+  ov.innerHTML = `<div style="background:#fff;width:100%;max-width:480px;border-radius:24px 24px 0 0;max-height:82vh;display:flex;flex-direction:column;padding:22px 20px calc(18px + env(safe-area-inset-bottom));box-sizing:border-box">
+    <div style="font-size:18px;font-weight:800;color:#1f2937;text-align:center;margin-bottom:16px">用户协议与隐私政策</div>
+    <div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch">
+      <div style="font-size:12px;color:#9ca3af;line-height:1.7;margin-bottom:14px">为保障您的权益，请在使用实名认证与交友私信功能前，仔细阅读以下条款。</div>
+      ${AGREEMENT.points.map(pt => `<div style="margin-bottom:16px"><div style="font-size:13.5px;font-weight:700;color:#ec4899;margin-bottom:5px">${pt.h}</div><div style="font-size:12.5px;color:#4b5563;line-height:1.75">${pt.p}</div></div>`).join('')}
+      <div style="font-size:12px;color:#9ca3af;line-height:1.7;padding-top:12px;border-top:1px solid #f3f4f6">${AGREEMENT.foot}</div>
+    </div>
+    <div style="display:flex;gap:12px;margin-top:18px">
+      <button style="flex:1;height:44px;border-radius:999px;border:none;background:#f3f4f6;color:#6b7280;font-size:15px;font-weight:700" onclick="document.getElementById('ag-overlay').remove()">暂不同意</button>
+      <button style="flex:1;height:44px;border-radius:999px;border:none;background:linear-gradient(135deg,#ec4899,#f472b6);color:#fff;font-size:15px;font-weight:700" onclick="confirmAgreement()">同意并继续</button>
+    </div>
+  </div>`;
+  ov.onclick = e => { if (e.target === ov) ov.remove(); };
+  document.body.appendChild(ov);
+}
+function confirmAgreement() {
+  const ov = document.getElementById('ag-overlay'); if (ov) ov.remove();
+  setAgreed(true);
 }
 
 let verifySelfieDataUrl = null;
@@ -382,6 +441,12 @@ async function submitVerify() {
   const avatar = p.photos && p.photos[0];
   if (!avatar) { showToast('请先在编辑资料里上传正脸照片'); return; }
   if (!verifySelfieDataUrl) { showToast('请先自拍一张正脸照'); return; }
+  // 🔒 合规卡点：未同意《用户协议与隐私政策》不允许提交
+  if (!isAgreed()) {
+    openAgreement();
+    showToast('请先阅读并同意《用户协议与隐私政策》');
+    return;
+  }
   showToast('正在人脸比对（请稍候）…');
   try {
     await baiduRegisterFace(verifySelfieDataUrl);   // 自拍入库（脸存百度人脸库）
@@ -393,6 +458,11 @@ async function submitVerify() {
     State.profile.verify = {
       ok: true, nameMask: maskName(name), idMask: maskId(id), phoneMask: maskPhone(phone), score: Math.round(rid.score),
       ts: Date.now(), raw: { name, id, phone } // 仅本地保存明文
+    };
+    // 📌 协议同意留痕：作为日后依规调阅聊天记录的合规依据
+    State.profile.agree = {
+      version: AGREEMENT.version, text: AGREEMENT.summary, ts: Date.now(),
+      device: (navigator.userAgent || '').slice(0, 80)
     };
     State.reverify = false;
     saveProfile();
@@ -787,7 +857,7 @@ function bindScreen() {
     };
   });
   bindDeckDrag();
-  if (State.screen === 'verify') bindVerifyPhoto();
+  if (State.screen === 'verify') { bindVerifyPhoto(); setAgreed(isAgreed()); }
   document.body.onclick = onClick;
 }
 function goRecommend() {
