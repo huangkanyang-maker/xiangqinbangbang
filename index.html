@@ -41,6 +41,37 @@
   .tab-bar { position:fixed; bottom:0; left:0; right:0; background:#fff; border-top:1px solid #f3f4f6; display:flex; padding:8px 0; padding-bottom:env(safe-area-inset-bottom,8px); z-index:50; }
   .tab-item { flex:1; text-align:center; padding:8px 0; font-size:12px; }
   .tab-icon { font-size:22px; display:block; }
+  .tab-dot { position:absolute; top:-4px; right:-12px; background:#ef4444; color:#fff; font-size:10px; font-weight:700; padding:1px 5px; border-radius:999px; line-height:1.3; }
+
+  /* ===== 💬 聊天列表 ===== */
+  .chat-row { display:flex; align-items:center; gap:12px; background:#fff; border-radius:18px; padding:14px; box-shadow:0 2px 10px rgba(236,72,153,.07); margin-bottom:12px; cursor:pointer; }
+  .chat-avatar { width:52px; height:52px; border-radius:14px; overflow:hidden; background:#fce7f3; display:flex; align-items:center; justify-content:center; font-size:24px; flex-shrink:0; }
+  .chat-avatar img { width:100%; height:100%; object-fit:cover; }
+  .chat-main { flex:1; min-width:0; }
+  .chat-name { font-weight:700; color:#1f2937; font-size:15px; margin-bottom:3px; }
+  .chat-last { font-size:12.5px; color:#9ca3af; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .chat-arrow { color:#d1d5db; font-size:20px; }
+  .tip-note { font-size:12px; color:#9ca3af; line-height:1.7; text-align:center; padding:8px 0 20px; }
+
+  /* ===== 💬 聊天详情 ===== */
+  .h5chat { display:flex; flex-direction:column; height:calc(100vh - 62px - env(safe-area-inset-bottom,8px)); }
+  .h5chat-head { display:flex; align-items:center; gap:10px; padding:12px 16px; background:#fff; border-bottom:1px solid #fce7f3; position:relative; }
+  .h5chat-back { border:none; background:none; font-size:26px; color:#6b7280; line-height:1; padding:0 4px; cursor:pointer; }
+  .h5chat-avatar { width:34px; height:34px; border-radius:10px; overflow:hidden; background:#fce7f3; display:flex; align-items:center; justify-content:center; font-size:18px; }
+  .h5chat-avatar img { width:100%; height:100%; object-fit:cover; }
+  .h5chat-nick { font-weight:700; color:#1f2937; font-size:15px; flex:1; }
+  .h5chat-more { border:none; background:none; font-size:22px; color:#6b7280; font-weight:700; cursor:pointer; padding:0 6px; }
+  .h5chat-body { flex:1; overflow-y:auto; padding:16px; }
+  .h5msg { display:flex; margin:8px 0; }
+  .h5msg.right { justify-content:flex-end; }
+  .h5msg.left { justify-content:flex-start; }
+  .h5bubble { max-width:72%; padding:10px 14px; font-size:14.5px; line-height:1.5; border-radius:16px; word-break:break-word; }
+  .h5bubble.me { background:linear-gradient(135deg,#ec4899,#f472b6); color:#fff; border-top-right-radius:5px; }
+  .h5bubble.other { background:#fff; color:#1f2937; border-top-left-radius:5px; box-shadow:0 2px 8px rgba(0,0,0,.06); }
+  .h5-empty { text-align:center; color:#9ca3af; font-size:13px; padding:50px 20px; line-height:1.8; }
+  .h5chat-input { display:flex; align-items:center; gap:10px; padding:12px 16px; background:#fff; border-top:1px solid #fce7f3; }
+  .h5chat-input input { flex:1; background:#fdf2f8; border:none; border-radius:999px; padding:11px 16px; font-size:14px; outline:none; }
+  .h5chat-input button { background:linear-gradient(135deg,#ec4899,#f472b6); color:#fff; border:none; border-radius:999px; padding:0 20px; height:40px; font-size:14px; font-weight:700; cursor:pointer; flex-shrink:0; }
   .modal-mask { position:fixed; inset:0; background:rgba(0,0,0,.5); display:flex; align-items:center; justify-content:center; z-index:200; }
   .modal-box { background:#fff; border-radius:16px; padding:24px; width:90%; max-width:360px; }
   .tag-chip { display:inline-flex; align-items:center; gap:4px; padding:6px 12px; border-radius:999px; border:1.5px solid #e5e7eb; cursor:pointer; font-size:13px; background:#fff; }
@@ -532,6 +563,7 @@ function render() {
     case 'quiz': main=renderQuiz(); break;
     case 'result': main=renderResult(); break;
     case 'recommend': main=renderRecommend(); break;
+    case 'chat': main = State.chatWith ? renderChatBox() : renderChat(); break;
     case 'verify': main=renderVerify(); break;
     case 'sync': main=renderSync(); break;
     case 'settings': main=renderSettings(); break;
@@ -541,9 +573,75 @@ function render() {
   bindScreen();
 }
 function renderTabBar() {
-  const items=[['home','🏠','首页'],['recommend','💘','心动'],['settings','⚙️','我的']];
-  return `<div class="tab-bar">${items.map(it=>`<div class="tab-item ${State.screen===it[0]?'tab-active':'tab-inactive'}" data-screen="${it[0]}"><span class="tab-icon">${it[1]}</span>${it[2]}</div>`).join('')}</div>`;
+  const items=[['home','🏠','首页'],['recommend','💘','心动'],['chat','💬','聊天'],['settings','⚙️','我的']];
+  const unread = State.unreadTotal || 0;
+  return `<div class="tab-bar">${items.map(it=>`<div class="tab-item ${State.screen===it[0]?'tab-active':'tab-inactive'}" data-screen="${it[0]}"><span class="tab-icon" style="position:relative">${it[1]}${it[0]==='chat'&&unread>0?`<span class="tab-dot">${unread>99?'99+':unread}</span>`:''}</span>${it[2]}</div>`).join('')}</div>`;
 }
+
+// ============== 💬 聊天列表（H5 展示 + 导流小程序） ==============
+function renderChat() {
+  if (!State.profile) {
+    return `<div class="px-5 pt-12 text-center"><div class="text-5xl mb-3">💬</div><p class="text-gray-500 mb-4">先填写资料，才能和心动的人聊天</p><button class="btn-primary" data-act="go-form">去填资料 →</button></div>`;
+  }
+  const matched = myMatched();
+  if (!matched.length) {
+    return `<div class="px-5 pt-14 text-center">
+      <div style="font-size:60px;margin-bottom:10px">📭</div>
+      <div class="text-lg font-bold text-gray-800 mb-2">还没有可以聊天的人</div>
+      <div class="text-sm text-gray-500 mb-6">去「💘 心动」滑卡，互相心动后就能开聊</div>
+      <button class="btn-primary" style="max-width:240px;margin:0 auto" data-act="go-recommend">💘 去滑卡</button>
+    </div>`;
+  }
+  const rows = matched.map(p => {
+    const avatar = p.photos && p.photos[0];
+    return `<div class="chat-row" data-act="open-h5chat" data-id="${p.id}">
+      <div class="chat-avatar">${avatar ? `<img src="${avatar}">` : '💗'}</div>
+      <div class="chat-main">
+        <div class="chat-name">${p.nickname} <span class="badge" style="background:#fce7f3;color:#be185d">颜值 ${(p.faceScore||0).toFixed(1)}</span></div>
+        <div class="chat-last">💞 你们互相心动了 · 点开开始聊天</div>
+      </div>
+      <div class="chat-arrow">›</div>
+    </div>`;
+  }).join('');
+  return `<div class="px-5 pt-6">
+    <h2 class="text-lg font-bold text-gray-800 mb-4">💬 我的聊天</h2>
+    ${rows}
+    <div class="tip-note">只有<b>互相心动</b>的人才会出现在这里 · 聊天内容仅你二人可见</div>
+  </div>`;
+}
+
+// ============== 💬 H5 聊天详情（本地可体验 + 导流小程序） ==============
+function renderChatBox() {
+  const p = (State.groupData || []).find(u => u.id === State.chatWith);
+  if (!p) { State.chatWith = null; return renderChat(); }
+  const log = getChatLog(p.id);
+  const avatar = p.photos && p.photos[0];
+  const msgs = log.length ? log.map(m => `
+    <div class="h5msg ${m.me ? 'right' : 'left'}">
+      <div class="h5bubble ${m.me ? 'me' : 'other'}">${escapeHtml(m.text)}</div>
+    </div>`).join('')
+    : `<div class="h5-empty">你们已经互相心动啦，发第一句问候吧～</div>`;
+  return `<div class="h5chat">
+    <div class="h5chat-head">
+      <button class="h5chat-back" data-act="back-chat">‹</button>
+      <div class="h5chat-avatar">${avatar ? `<img src="${avatar}">` : '💗'}</div>
+      <div class="h5chat-nick">${p.nickname}</div>
+      <button class="h5chat-more" data-act="chat-menu">⋯</button>
+    </div>
+    <div class="h5chat-body" id="h5chat-body">${msgs}</div>
+    <div class="h5chat-input">
+      <input id="h5chat-in" placeholder="发一句悄悄话…" maxlength="200" onkeydown="if(event.key==='Enter')document.querySelector('[data-act=send-h5]').click()">
+      <button data-act="send-h5">发送</button>
+    </div>
+    <div class="tip-note" style="text-align:center;padding:0 16px 14px">💡 想和 TA 真正实时聊天？去小程序版，消息秒达、还能收推送</div>
+  </div>`;
+}
+
+// H5 本地聊天记录（存在本机，仅自己可看；真正跨设备聊天在小程序）
+function chatKey(uid) { return 'xqbb_h5chat_' + State.profile.id + '_' + uid; }
+function getChatLog(uid) { try { return JSON.parse(localStorage.getItem(chatKey(uid)) || '[]'); } catch (e) { return []; } }
+function saveChatLog(uid, log) { try { localStorage.setItem(chatKey(uid), JSON.stringify(log.slice(-200))); } catch (e) {} }
+function escapeHtml(s) { return String(s || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
 
 // ============== 首页 ==============
 function renderHome() {
@@ -572,7 +670,7 @@ function renderHome() {
       <button class="btn-secondary" data-act="go-form">📝 编辑资料</button>
       <button class="btn-secondary" data-act="re-score">✨ 颜值重测</button>
     </div>
-    <div class="bg-white rounded-2xl p-5 shadow-sm mb-4"><h3 class="font-bold text-gray-800 mb-3">🎯 择偶要求</h3><div class="text-sm text-gray-600 space-y-1"><div>性别：${p.requirement.gender==='male'?'男':'女'}</div><div>年龄：${p.requirement.ageMin} - ${p.requirement.ageMax} 岁</div><div>身高：${p.requirement.heightMin} - ${p.requirement.heightMax} cm</div><div>老家：${p.requirement.hometowns.length?p.requirement.hometowns.join(' / '):'不限'}</div><div>颜值分：≥ ${p.requirement.faceScoreMin} 分</div></div></div>
+    <div class="bg-white rounded-2xl p-5 shadow-sm mb-4"><h3 class="font-bold text-gray-800 mb-3">🎯 择偶要求</h3>${p.requirement ? `<div class="text-sm text-gray-600 space-y-1"><div>性别：${p.requirement.gender==='male'?'男':'女'}</div><div>年龄：${p.requirement.ageMin} - ${p.requirement.ageMax} 岁</div><div>身高：${p.requirement.heightMin} - ${p.requirement.heightMax} cm</div><div>老家：${(p.requirement.hometowns||[]).length?p.requirement.hometowns.join(' / '):'不限'}</div><div>颜值分：≥ ${p.requirement.faceScoreMin} 分</div></div>` : `<button class="btn-secondary" data-act="go-form">还没填择偶要求，去补充 →</button>`}</div>
     <div class="bg-white rounded-2xl p-5 shadow-sm mb-4"><h3 class="font-bold text-gray-800 mb-2">📊 心动状态</h3><div class="text-sm text-gray-600">我已心动 <b class="text-pink-500">${(p.liked||[]).length}</b> 位 · 互相心动 <b class="text-pink-500">${myMatched().length}</b> 位</div></div>
     <button class="btn-primary" data-act="go-recommend">💘 开始心动滑卡</button>
     <div class="text-center mt-4"><button class="text-xs text-gray-400 underline" data-act="force-reload">页面不是 v5.4？点此强制刷新</button></div>
@@ -654,7 +752,8 @@ function getDeckCandidates() {
 function myMatched() {
   const me = State.profile; if (!me) return [];
   const liked = me.liked || [];
-  return State.groupData.filter(u => u.id !== me.id && liked.includes(u.id) && (u.liked || []).includes(me.id));
+  const unmatched = me.unmatched || [];
+  return State.groupData.filter(u => u.id !== me.id && liked.includes(u.id) && (u.liked || []).includes(me.id) && !unmatched.includes(u.id));
 }
 function cardFaceHTML(p) {
   const firstLike = (p.liked || []).includes(State.profile.id);
@@ -852,6 +951,7 @@ function bindScreen() {
   document.querySelectorAll('[data-screen]').forEach(el => {
     el.onclick = () => {
       const target = el.dataset.screen;
+      State.chatWith = null; // 切 tab 时退出聊天详情
       if (target === 'recommend') goRecommend();
       else { State.screen = target; render(); }
     };
@@ -867,6 +967,84 @@ function goRecommend() {
     render();
   });
 }
+// ===== 💬 H5 聊天：发送 / 菜单（解除匹配、举报） =====
+function sendH5Chat() {
+  const inp = document.getElementById('h5chat-in');
+  if (!inp) return;
+  const text = (inp.value || '').trim();
+  if (!text) return;
+  const uid = State.chatWith;
+  const log = getChatLog(uid);
+  log.push({ me: true, text, ts: Date.now() });
+  saveChatLog(uid, log);
+  inp.value = '';
+  render();
+  State.chatWith = uid;
+  setTimeout(() => { const b = document.getElementById('h5chat-body'); if (b) b.scrollTop = b.scrollHeight; }, 50);
+}
+function openChatMenu() {
+  const uid = State.chatWith;
+  const p = (State.groupData || []).find(u => u.id === uid);
+  const old = document.getElementById('cm-overlay'); if (old) old.remove();
+  const ov = document.createElement('div');
+  ov.id = 'cm-overlay';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:9998;background:rgba(17,24,39,.4)';
+  ov.innerHTML = `<div style="position:absolute;right:14px;top:76px;background:#fff;border-radius:14px;box-shadow:0 8px 30px rgba(0,0,0,.18);overflow:hidden;min-width:180px">
+    <div data-cm="unmatch" style="padding:14px 20px;font-size:15px;color:#374151;cursor:pointer">💔 解除匹配</div>
+    <div data-cm="report" style="padding:14px 20px;font-size:15px;color:#ef4444;cursor:pointer;border-top:1px solid #f3f4f6">🚨 举报 TA</div>
+  </div>`;
+  ov.onclick = ev => {
+    const el = ev.target.closest('[data-cm]');
+    if (!el) { ov.remove(); return; }
+    ov.remove();
+    if (el.dataset.cm === 'unmatch') askUnmatchH5(uid, p);
+    else openReportH5(uid, p);
+  };
+  document.body.appendChild(ov);
+}
+function askUnmatchH5(uid, p) {
+  if (!confirm('解除后你们将互相不再出现在匹配列表里，聊天入口也会移除。确定解除吗？')) return;
+  const me = State.profile;
+  me.liked = (me.liked || []).filter(id => id !== uid);
+  me.unmatched = (me.unmatched || []).concat(uid);
+  saveProfile();
+  try { localStorage.removeItem(chatKey(uid)); } catch (e) {}
+  State.chatWith = null;
+  State.screen = 'chat';
+  render();
+  showToast('已解除匹配');
+  uploadMyProfile();
+}
+function openReportH5(uid, p) {
+  const reasons = ['骚扰辱骂', '虚假资料/照片不符', '骗钱/诱导转账', '发布广告', '色情低俗', '其他违规'];
+  const old = document.getElementById('rp-overlay'); if (old) old.remove();
+  const ov = document.createElement('div');
+  ov.id = 'rp-overlay';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(17,24,39,.55);display:flex;align-items:flex-end;justify-content:center';
+  ov.innerHTML = `<div style="background:#fff;width:100%;max-width:480px;border-radius:24px 24px 0 0;padding:22px 20px calc(18px + env(safe-area-inset-bottom));box-sizing:border-box;max-height:84vh;overflow-y:auto">
+    <div style="font-size:18px;font-weight:800;color:#1f2937;text-align:center">举报 ${p ? p.nickname : 'TA'}</div>
+    <div style="font-size:12px;color:#9ca3af;text-align:center;margin:8px 0 16px">请选择举报原因，我们会在 24 小时内核实处理</div>
+    ${reasons.map((r, i) => `<label style="display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:12px;margin-bottom:8px;background:#f9fafb;font-size:14.5px;color:#374151;cursor:pointer"><input type="radio" name="rpr" value="${r}" ${i === 0 ? 'checked' : ''}> ${r}</label>`).join('')}
+    <textarea id="rp-extra" placeholder="补充说明（选填）" maxlength="200" style="width:100%;box-sizing:border-box;min-height:70px;background:#f9fafb;border:none;border-radius:12px;padding:12px;font-size:13.5px;margin-top:8px"></textarea>
+    <div style="font-size:11.5px;color:#9ca3af;line-height:1.6;margin-top:12px">提交后，平台将依据《用户协议与隐私政策》第 1 条调阅你与对方的本次对话用于核实，仅限本次举报所涉内容。</div>
+    <div style="display:flex;gap:12px;margin-top:16px">
+      <button id="rp-cancel" style="flex:1;height:44px;border-radius:999px;border:none;background:#f3f4f6;color:#6b7280;font-size:15px;font-weight:700">取消</button>
+      <button id="rp-submit" style="flex:1;height:44px;border-radius:999px;border:none;background:#ef4444;color:#fff;font-size:15px;font-weight:700">提交举报</button>
+    </div>
+  </div>`;
+  document.body.appendChild(ov);
+  ov.querySelector('#rp-cancel').onclick = () => ov.remove();
+  ov.querySelector('#rp-submit').onclick = () => {
+    const sel = ov.querySelector('input[name="rpr"]:checked');
+    const extra = (ov.querySelector('#rp-extra').value || '').slice(0, 200);
+    const reports = JSON.parse(localStorage.getItem('xqbb_h5reports') || '[]');
+    reports.push({ me: State.profile.id, to: uid, toNick: p ? p.nickname : '', reason: sel ? sel.value : '其他违规', extra, ts: Date.now(), consentToRead: true });
+    localStorage.setItem('xqbb_h5reports', JSON.stringify(reports));
+    ov.remove();
+    showToast('举报已提交，我们将在 24 小时内核实');
+  };
+}
+
 function onClick(e) {
   const t = e.target.closest('[data-act]');
   if(!t) return;
@@ -880,6 +1058,17 @@ function onClick(e) {
     case 'show-matched': showMatchedModal(); return;
     case 'goto-sync': State.screen='sync'; break;
     case 'goto-settings': State.screen='settings'; break;
+    // ===== 💬 H5 聊天 =====
+    case 'open-h5chat': {
+      const uid = t.dataset.id;
+      if (!isVerified(State.profile)) { showToast('请先完成实名认证再聊天'); State.screen='verify'; render(); return; }
+      State.chatWith = uid; State.screen = 'chat'; render();
+      setTimeout(() => { const b = document.getElementById('h5chat-body'); if (b) b.scrollTop = b.scrollHeight; }, 50);
+      return;
+    }
+    case 'back-chat': State.chatWith = null; render(); return;
+    case 'send-h5': sendH5Chat(); return;
+    case 'chat-menu': openChatMenu(); return;
     case 'back': State.screen='home'; break;
     case 'form-next': collectForm(); return;
     case 'quiz-start': startFaceScore(); return;
